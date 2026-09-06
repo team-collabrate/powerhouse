@@ -20,9 +20,11 @@ export interface KpiCardProps {
   value: string;
   delta?: { value: string; direction: "up" | "down" };
   icon: keyof typeof ICONS;
+  hint?: string;
+  progress?: number;
 }
 
-export function KpiCard({ label, value, delta, icon }: KpiCardProps) {
+export function KpiCard({ label, value, delta, icon, hint, progress }: KpiCardProps) {
   const Icon = ICONS[icon];
   const up = delta?.direction === "up";
 
@@ -57,6 +59,16 @@ export function KpiCard({ label, value, delta, icon }: KpiCardProps) {
           </span>
         )}
       </div>
+
+      {hint && <p className="tnum mt-2 text-[11px] text-ink-3">{hint}</p>}
+      {progress !== undefined && (
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-sunken">
+          <div
+            className="h-full rounded-full bg-accent"
+            style={{ width: `${Math.max(2, progress)}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }

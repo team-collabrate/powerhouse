@@ -45,6 +45,7 @@ export interface DashInputs {
   invoices: DashInvoiceInput[]; // newest first
   payments: { amount: number; date: Date }[]; // last 30 days
   clients: { createdAt: Date }[]; // last 6 months
+  monthlyRevenueTarget: number;
   greetingName: string;
   now: Date;
 }
@@ -115,6 +116,11 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     .reduce((s, i) => s + i.balance, 0);
   const newThisMonth = projects.filter((p) => p.createdAt >= monthStart).length;
 
+  const targetPct =
+    input.monthlyRevenueTarget > 0
+      ? (revenueMtd / input.monthlyRevenueTarget) * 100
+      : 0;
+
   const kpis: DashboardView["kpis"] = [
     {
       id: "revenue",
@@ -122,6 +128,14 @@ export function buildDashboardView(input: DashInputs): DashboardView {
       value: money(revenueMtd),
       delta: pctChange(revenueMtd, revenuePrev),
       icon: "trending-up",
+      hint:
+        input.monthlyRevenueTarget > 0
+          ? `${targetPct.toFixed(0)}% of ${money(input.monthlyRevenueTarget)} target`
+          : undefined,
+      progress:
+        input.monthlyRevenueTarget > 0
+          ? Math.min(100, targetPct)
+          : undefined,
     },
     {
       id: "projects",
@@ -322,7 +336,7 @@ export async function getDashboardData(
   const paymentsSince = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const sixMonthsStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-  const [projects, invoices, payments, clients] = await Promise.all([
+  const [projects, invoices, payments, clients, agency] = await Promise.all([
     prisma.project.findMany({
       where: { agencyId },
       select: {
@@ -360,6 +374,10 @@ export async function getDashboardData(
       where: { agencyId, createdAt: { gte: sixMonthsStart } },
       select: { createdAt: true },
     }),
+    prisma.agency.findUnique({
+      where: { id: agencyId },
+      select: { monthlyRevenueTarget: true },
+    }),
   ]);
 
   return buildDashboardView({
@@ -395,5 +413,6 @@ export async function getDashboardData(
       date: p.paymentDate,
     })),
     clients,
+    monthlyRevenueTarget: num(agency?.monthlyRevenueTarget),
   });
 }

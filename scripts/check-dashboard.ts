@@ -18,6 +18,7 @@ const monthsBack = (m: number) => new Date(2026, 8 - m, 10);
 const input: DashInputs = {
   greetingName: "Bella",
   now,
+  monthlyRevenueTarget: 50_000,
   projects: [
     {
       name: "Healthy Project",
@@ -101,6 +102,11 @@ check(
 check("active projects = 2", v.kpis[1].value === "2", v.kpis[1].value);
 check("new-this-month delta = +1", v.kpis[1].delta?.value === "+1", v.kpis[1].delta);
 check("outstanding = $21,000 (12k + 9k)", v.kpis[3].value === "$21,000", v.kpis[3].value);
+check(
+  "revenue KPI shows target progress (25k / 50k = 50%)",
+  v.kpis[0].progress === 50 && v.kpis[0].hint === "50% of $50,000 target",
+  { progress: v.kpis[0].progress, hint: v.kpis[0].hint },
+);
 check("profit series has 12 points", v.profit.points.length === 12, v.profit.points.length);
 check("yMax is a positive multiple of 500", v.profit.yMax > 0 && v.profit.yMax % 500 === 0, v.profit.yMax);
 check(

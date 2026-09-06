@@ -30,6 +30,8 @@ export const DEMO_DASHBOARD: DashboardView = {
       value: "$128,400",
       delta: { value: "+12.4%", direction: "up" },
       icon: "trending-up",
+      hint: "86% of $150,000 target",
+      progress: 86,
     },
     {
       id: "projects",

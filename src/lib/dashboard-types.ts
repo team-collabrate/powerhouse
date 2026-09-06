@@ -19,6 +19,10 @@ export interface KpiView {
   value: string;
   delta?: Delta;
   icon: KpiIcon;
+  /** small secondary line, e.g. "63% of $90k target" */
+  hint?: string;
+  /** 0–100, renders a thin progress bar at the card foot */
+  progress?: number;
 }
 
 export interface ProfitPoint {

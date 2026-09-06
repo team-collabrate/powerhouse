@@ -116,12 +116,23 @@ Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
 ## Status
 
 Done: Sprint 1 auth · dashboard UI + data layer · Projects CRUD · Expense
-logging · Invoices + payments · RLS + role enforcement · Clients CRUD
-(`/clients` + `/clients/[id]` with financial rollups; `GET/POST /api/clients`,
-`GET/PATCH/DELETE /api/clients/[id]`; DELETE is a soft deactivate).
+logging · Invoices + payments · RLS + role enforcement · Clients CRUD ·
+Settings.
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: analytics / team-settings / client portal. Team invites don't exist
-yet, so every real user is an admin until Sprint 6 builds team management.
+Next: analytics / client portal / invoice email+PDF / team invites.
+
+### Settings (`/settings`, `settings:manage` = admin only)
+
+- Agency form (name, monthly revenue target, brand colour, logo URL) →
+  `PATCH /api/settings`. The revenue target drives the "% of target" hint +
+  progress bar on the dashboard Revenue KPI (`KpiView.hint` / `.progress`).
+  Brand colour + logo are stored only — they don't restyle the dashboard.
+- Company overhead CRUD (`company_expenses` table): `GET/POST
+  /api/company-expenses`, `PATCH/DELETE /api/company-expenses/[id]`.
+  Shows normalised $/mo recurring + last-month total. NOT yet wired to
+  project `allocatedOverhead` (that allocation is a separate design step).
+- Team members: read-only list. Invites don't exist yet, so every real
+  signup is an admin.
 
 ### Invoices
 

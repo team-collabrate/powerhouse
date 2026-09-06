@@ -77,6 +77,34 @@ async function main() {
     },
   });
 
+  await prisma.agency.update({
+    where: { id: agencyId },
+    data: { monthlyRevenueTarget: D(90_000) },
+  });
+
+  // ---- company overhead ----
+  await prisma.companyExpense.createMany({
+    data: (
+      [
+        ["rent", "Studio lease", 6_500, true, "monthly"],
+        ["salary", "Core payroll", 62_000, true, "monthly"],
+        ["software", "Design + dev tool stack", 1_400, true, "monthly"],
+        ["insurance", "Professional liability", 2_100, true, "quarterly"],
+        ["utilities", "Power + internet", 380, true, "monthly"],
+        ["other", "Q3 team offsite", 4_200, false, null],
+      ] as const
+    ).map(([category, description, amount, isRecurring, freq], i) => ({
+      agencyId,
+      category,
+      description,
+      amount: D(amount),
+      dateIncurred: day(-4 - i * 3),
+      isRecurring,
+      recurringFrequency: freq,
+      createdBy: primaryUserId,
+    })),
+  });
+
   // ---- team ----
   await Promise.all(
     ["Priya Anand", "Marcus Lee", "Tomás Rivera", "Dana Whitfield"].map(
