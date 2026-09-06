@@ -1,4 +1,4 @@
-import { Plus } from "react-feather";
+import Link from "next/link";
 import { getSessionContext } from "@/lib/session";
 import { getDashboardData } from "@/lib/queries/dashboard";
 import { DEMO_DASHBOARD } from "@/lib/demo-data";
@@ -11,14 +11,21 @@ import { TopProjects } from "@/components/dashboard/TopProjects";
 import { ClientGrowthBars } from "@/components/dashboard/ClientGrowthBars";
 import { RecentInvoices } from "@/components/dashboard/RecentInvoices";
 import { InsightsCard } from "@/components/dashboard/InsightsCard";
+import { NewProjectButton } from "@/components/projects/NewProjectButton";
 
 export const dynamic = "force-dynamic";
 
-function ViewAll() {
+function ViewAll({ href }: { href?: string }) {
+  if (!href) {
+    return <span className="text-[12px] font-medium text-ink-3">View all</span>;
+  }
   return (
-    <button className="text-[12px] font-medium text-accent-strong hover:underline">
+    <Link
+      href={href}
+      className="text-[12px] font-medium text-accent-strong hover:underline"
+    >
       View all
-    </button>
+    </Link>
   );
 }
 
@@ -57,11 +64,12 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border border-hairline-strong bg-surface px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-surface-sunken">
-            <Plus size={15} />
-            New Project
-          </button>
-          <button className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] bg-accent px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-accent-strong">
+          <NewProjectButton variant="secondary" />
+          <button
+            disabled
+            title="Coming next"
+            className="inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-[var(--radius-sm)] bg-accent px-3.5 text-[13px] font-medium text-white opacity-50"
+          >
             Create Invoice
           </button>
         </div>
@@ -88,7 +96,7 @@ export default async function DashboardPage() {
           <CardHeader
             title="Top Projects"
             subtitle="By profit margin"
-            action={<ViewAll />}
+            action={<ViewAll href="/projects" />}
             menu={false}
           />
           <TopProjects items={view.topProjects} />

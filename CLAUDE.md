@@ -66,19 +66,37 @@ Aesthetic rules: purple accent only on primary action / active nav / primary
 chart series; green only on positive deltas & paid state; hairline borders,
 minimal shadow, `.tnum` on every number.
 
+## Projects CRUD
+
+`/projects` (list, status-tab filters + search via URL params) and
+`/projects/[id]` (detail: profit breakdown, time/expenses/milestones/invoices
+lists) are server components off `src/lib/queries/projects.ts`.
+
+Mutations: `POST /api/projects`, `PATCH|DELETE /api/projects/[id]`,
+`GET|POST /api/clients`. DELETE is a soft close (`status = "closed"`).
+Shared API helpers in `src/lib/api.ts` (`requireSession`, `ok`, `fail`,
+`validationError`); Zod schemas in `src/lib/validation/`; every mutation
+writes an `activity_log` row via `src/lib/activity.ts`.
+
+Create/edit UI is one client component — `ProjectDialog` (render-prop
+trigger) — wrapped by `NewProjectButton` / `EditProjectButton`. `ClientSelect`
+has inline "new client" creation.
+
 ## Going live with real data
 
+Supabase project already connected (ref `njptbivnjllynoiehqrv`). Migrations
+applied. Demo login: `demo@meridian.test` / `demodemo1234`.
+
 ```
-# 1. create a Supabase project, fill .env.local (see .env.example)
-npm run db:migrate        # creates tables (needs DIRECT_URL)
-# 2. sign up in the app  -> provisions your agency + admin user
-SEED_EMAIL=you@example.com npm run db:seed   # fills that agency with demo rows
+npm run db:migrate                          # after editing schema.prisma
+# add SEED_EMAIL="you@example.com" to .env.local first (PowerShell-safe), then:
+npm run db:seed                             # fills that agency with demo rows
 ```
 Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
-that no auth user is attached to (useful for `prisma studio` inspection only).
+(no auth user attached — `prisma studio` inspection only).
 
 ## Status
 
-Sprint 1 (auth) + dashboard UI + dashboard data layer done. Not yet done:
-run migrations against a real Supabase project, RLS policies, and
-projects/invoices/clients CRUD pages (Sprint 3+).
+Done: Sprint 1 auth · dashboard UI + data layer · Projects CRUD.
+Next: time-tracking + expense logging (feeds profit), then invoices/payments,
+then RLS policies, analytics, team/settings, client portal.
