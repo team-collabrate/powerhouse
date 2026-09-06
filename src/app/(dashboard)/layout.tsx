@@ -8,18 +8,24 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const configured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!user) redirect("/login");
+  let user: { email?: string } | null = null;
+  if (configured) {
+    const supabase = await createClient();
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+    if (!user) redirect("/login");
+  }
 
   return (
     <div className="min-h-screen bg-bg-page">
       <Sidebar />
       <div className="pl-[260px]">
-        <Header userEmail={user.email} />
+        <Header userEmail={user?.email} />
         <main className="p-8">{children}</main>
       </div>
     </div>

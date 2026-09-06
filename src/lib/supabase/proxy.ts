@@ -6,6 +6,15 @@ const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password"
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  // Not configured yet (fresh clone, no .env.local) — let every request through
+  // so the app is browsable before a Supabase project is wired up.
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
