@@ -104,9 +104,21 @@ Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
 ## Status
 
 Done: Sprint 1 auth · dashboard UI + data layer · Projects CRUD · Expense
-logging (`/expenses` + on the project detail page;
-`POST /api/projects/[id]/expenses`, `PATCH|DELETE /api/expenses/[id]` —
-adding/editing an expense recomputes project profit live).
+logging · Invoices + payments.
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: invoices/payments, then RLS policies, analytics, team/settings,
-client portal.
+Next: RLS policies, then analytics, team/settings, client portal.
+
+### Invoices
+
+`/invoices` (status-tab filters, outstanding/overdue totals) and
+`/invoices/[id]` off `src/lib/queries/invoices.ts`. Lifecycle:
+draft → send (`/api/invoices/[id]/send`, no real email yet — Sprint 4) →
+record payments (`/api/invoices/[id]/payments`) → auto "paid" when
+Σpayments ≥ amount. `src/lib/invoice-sync.ts` keeps the stored `status`
+in step with payments; `src/lib/invoice-status.ts` `displayInvoiceStatus()`
+is the single source of truth for the badge (draft/sent/partial/overdue/
+paid/cancelled) and is used by the dashboard, project detail, and invoice
+pages. Invoice numbers: `INV-YYYY-NNN`, unique per agency, allocated by
+`nextInvoiceNumber()` with retry-on-conflict.
+Amount/issue date lock once an invoice leaves draft. Cancel is blocked
+while payments exist; only drafts can be hard-deleted.

@@ -83,11 +83,11 @@ export const DEMO_DASHBOARD: DashboardView = {
     ],
   },
   recentInvoices: [
-    { number: "INV-2026-041", client: "Helio Labs", status: "paid", amount: "$24,000" },
-    { number: "INV-2026-040", client: "Northwind Traders", status: "sent", amount: "$18,500" },
-    { number: "INV-2026-039", client: "Acre & Co.", status: "overdue", amount: "$9,200" },
-    { number: "INV-2026-038", client: "Vector Studio", status: "paid", amount: "$31,750" },
-    { number: "INV-2026-037", client: "Meridian Group", status: "draft", amount: "$12,000" },
+    { id: "", number: "INV-2026-041", client: "Helio Labs", status: "paid", amount: "$24,000" },
+    { id: "", number: "INV-2026-040", client: "Northwind Traders", status: "sent", amount: "$18,500" },
+    { id: "", number: "INV-2026-039", client: "Acre & Co.", status: "overdue", amount: "$9,200" },
+    { id: "", number: "INV-2026-038", client: "Vector Studio", status: "paid", amount: "$31,750" },
+    { id: "", number: "INV-2026-037", client: "Meridian Group", status: "draft", amount: "$12,000" },
   ],
   insights: [
     {

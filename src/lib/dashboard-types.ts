@@ -1,4 +1,10 @@
-export type InvoiceStatus = "paid" | "sent" | "overdue" | "draft";
+export type InvoiceStatus =
+  | "paid"
+  | "partial"
+  | "sent"
+  | "overdue"
+  | "draft"
+  | "cancelled";
 
 export interface Delta {
   value: string;
@@ -57,6 +63,7 @@ export interface ClientGrowthView {
 }
 
 export interface InvoiceRowView {
+  id: string;
   number: string;
   client: string;
   status: InvoiceStatus;

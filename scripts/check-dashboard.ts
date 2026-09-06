@@ -60,9 +60,9 @@ const input: DashInputs = {
     },
   ],
   invoices: [
-    { invoiceNumber: "INV-2026-010", amount: 25_000, status: "paid", dueDate: d(-10), clientName: "Acme" },
-    { invoiceNumber: "INV-2026-009", amount: 12_000, status: "sent", dueDate: d(20), clientName: "Beta Co" },
-    { invoiceNumber: "INV-2026-008", amount: 9_000, status: "sent", dueDate: d(-45), clientName: "Gamma" }, // overdue + stale
+    { id: "i10", invoiceNumber: "INV-2026-010", amount: 25_000, amountPaid: 25_000, status: "paid", dueDate: d(-10), clientName: "Acme" },
+    { id: "i9", invoiceNumber: "INV-2026-009", amount: 12_000, amountPaid: 0, status: "sent", dueDate: d(20), clientName: "Beta Co" },
+    { id: "i8", invoiceNumber: "INV-2026-008", amount: 9_000, amountPaid: 0, status: "sent", dueDate: d(-45), clientName: "Gamma" }, // overdue + stale
   ],
   payments: [
     { amount: 25_000, date: d(-4) }, // this month, Sep 11 (MTD through Sep 15)

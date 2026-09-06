@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { calculateProjectProfit } from "@/lib/profit";
 import { formatCurrency } from "@/lib/format";
+import { displayInvoiceStatus, isOutstanding } from "@/lib/invoice-status";
 import {
   SERVICE_COLORS,
   SERVICE_LABELS,
   type ClientGrowthBar,
   type DashboardView,
   type InvoiceRowView,
-  type InvoiceStatus,
   type ProfitPoint,
 } from "@/lib/dashboard-types";
 
@@ -31,8 +31,10 @@ export interface DashProjectInput {
 }
 
 export interface DashInvoiceInput {
+  id: string;
   invoiceNumber: string;
   amount: number;
+  amountPaid: number;
   status: string;
   dueDate: Date;
   clientName: string;
@@ -48,8 +50,6 @@ export interface DashInputs {
 }
 
 /* ------------------------------------------------------------------ */
-
-const OUTSTANDING_STATUSES = new Set(["sent", "viewed", "overdue", "partial"]);
 
 const money = (v: number) => formatCurrency(v);
 
@@ -68,14 +68,6 @@ function ceilCurrency(v: number) {
 }
 
 const monthKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}`;
-
-function normalizeStatus(status: string, dueDate: Date, now: Date): InvoiceStatus {
-  const s = status.toLowerCase();
-  if (s === "paid") return "paid";
-  if (s === "draft" || s === "cancelled") return "draft";
-  if (s === "overdue") return "overdue";
-  return dueDate < now ? "overdue" : "sent";
-}
 
 export function buildDashboardView(input: DashInputs): DashboardView {
   const { projects, invoices, payments, clients, greetingName, now } = input;
@@ -113,9 +105,14 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     active.length > 0
       ? active.reduce((s, x) => s + x.profitMargin, 0) / active.length
       : 0;
-  const outstanding = invoices
-    .filter((i) => OUTSTANDING_STATUSES.has(i.status.toLowerCase()))
-    .reduce((s, i) => s + i.amount, 0);
+  const invoiceViews = invoices.map((i) => ({
+    ...i,
+    display: displayInvoiceStatus(i.status, i.dueDate, i.amount, i.amountPaid, now),
+    balance: Math.max(0, i.amount - i.amountPaid),
+  }));
+  const outstanding = invoiceViews
+    .filter((i) => isOutstanding(i.display))
+    .reduce((s, i) => s + i.balance, 0);
   const newThisMonth = projects.filter((p) => p.createdAt >= monthStart).length;
 
   const kpis: DashboardView["kpis"] = [
@@ -253,10 +250,11 @@ export function buildDashboardView(input: DashInputs): DashboardView {
   };
 
   // ---- recent invoices ----
-  const recentInvoices: InvoiceRowView[] = invoices.slice(0, 5).map((i) => ({
+  const recentInvoices: InvoiceRowView[] = invoiceViews.slice(0, 5).map((i) => ({
+    id: i.id,
     number: i.invoiceNumber,
     client: i.clientName,
-    status: normalizeStatus(i.status, i.dueDate, now),
+    status: i.display,
     amount: money(i.amount),
   }));
 
@@ -274,13 +272,11 @@ export function buildDashboardView(input: DashInputs): DashboardView {
       icon: "alert-triangle",
     });
   }
-  const stale = invoices.filter(
-    (i) =>
-      !["paid", "cancelled", "draft"].includes(i.status.toLowerCase()) &&
-      i.dueDate < thirtyDaysAgo,
+  const stale = invoiceViews.filter(
+    (i) => isOutstanding(i.display) && i.dueDate < thirtyDaysAgo,
   );
   if (stale.length > 0) {
-    const total = stale.reduce((s, i) => s + i.amount, 0);
+    const total = stale.reduce((s, i) => s + i.balance, 0);
     const names = [...new Set(stale.map((i) => i.clientName))].slice(0, 2);
     insights.push({
       title: `${stale.length} invoice${stale.length > 1 ? "s" : ""} worth ${money(
@@ -347,11 +343,13 @@ export async function getDashboardData(
       where: { agencyId },
       orderBy: { createdAt: "desc" },
       select: {
+        id: true,
         invoiceNumber: true,
         amount: true,
         status: true,
         dueDate: true,
         client: { select: { name: true } },
+        payments: { select: { amount: true } },
       },
     }),
     prisma.payment.findMany({
@@ -384,8 +382,10 @@ export async function getDashboardData(
       })),
     })),
     invoices: invoices.map((i) => ({
+      id: i.id,
       invoiceNumber: i.invoiceNumber,
       amount: num(i.amount),
+      amountPaid: i.payments.reduce((s, p) => s + num(p.amount), 0),
       status: i.status,
       dueDate: i.dueDate,
       clientName: i.client.name,

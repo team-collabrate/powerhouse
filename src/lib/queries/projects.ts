@@ -156,7 +156,8 @@ export interface ProjectDetail {
     id: string;
     invoiceNumber: string;
     amount: number;
-    status: string;
+    amountPaid: number;
+    rawStatus: string;
     dueDate: string;
   }[];
 }
@@ -205,6 +206,7 @@ export async function getProject(
           amount: true,
           status: true,
           dueDate: true,
+          payments: { select: { amount: true } },
         },
       },
     },
@@ -261,7 +263,8 @@ export async function getProject(
       id: i.id,
       invoiceNumber: i.invoiceNumber,
       amount: num(i.amount),
-      status: i.status,
+      amountPaid: i.payments.reduce((s, pay) => s + num(pay.amount), 0),
+      rawStatus: i.status,
       dueDate: i.dueDate.toISOString(),
     })),
   };

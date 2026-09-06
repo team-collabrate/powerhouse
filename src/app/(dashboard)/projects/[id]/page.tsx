@@ -10,17 +10,9 @@ import { ProjectStatusBadge } from "@/components/projects/ProjectStatusBadge";
 import { EditProjectButton } from "@/components/projects/EditProjectButton";
 import { CloseProjectButton } from "@/components/projects/CloseProjectButton";
 import { ProjectExpensesCard } from "@/components/expenses/ProjectExpensesCard";
-import type { InvoiceStatus } from "@/lib/dashboard-types";
+import { displayInvoiceStatus } from "@/lib/invoice-status";
 
 export const dynamic = "force-dynamic";
-
-function normalizeInvoiceStatus(s: string, due: string): InvoiceStatus {
-  const v = s.toLowerCase();
-  if (v === "paid") return "paid";
-  if (v === "draft" || v === "cancelled") return "draft";
-  if (v === "overdue") return "overdue";
-  return new Date(due) < new Date() ? "overdue" : "sent";
-}
 
 export default async function ProjectDetailPage({
   params,
@@ -148,11 +140,21 @@ export default async function ProjectDetailPage({
                     className="border-b border-hairline last:border-0"
                   >
                     <td className="tnum px-5 py-2.5 text-[13px] font-medium text-ink">
-                      {i.invoiceNumber}
+                      <Link
+                        href={`/invoices/${i.id}`}
+                        className="hover:text-accent-strong"
+                      >
+                        {i.invoiceNumber}
+                      </Link>
                     </td>
                     <td className="px-2 py-2.5">
                       <StatusBadge
-                        status={normalizeInvoiceStatus(i.status, i.dueDate)}
+                        status={displayInvoiceStatus(
+                          i.rawStatus,
+                          new Date(i.dueDate),
+                          i.amount,
+                          i.amountPaid,
+                        )}
                       />
                     </td>
                     <td className="tnum px-5 py-2.5 text-right text-[13px] text-ink">

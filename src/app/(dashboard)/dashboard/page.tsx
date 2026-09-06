@@ -12,6 +12,8 @@ import { ClientGrowthBars } from "@/components/dashboard/ClientGrowthBars";
 import { RecentInvoices } from "@/components/dashboard/RecentInvoices";
 import { InsightsCard } from "@/components/dashboard/InsightsCard";
 import { NewProjectButton } from "@/components/projects/NewProjectButton";
+import { NewInvoiceButton } from "@/components/invoices/NewInvoiceButton";
+import { invoiceableProjects } from "@/lib/queries/invoices";
 
 export const dynamic = "force-dynamic";
 
@@ -29,20 +31,22 @@ function ViewAll({ href }: { href?: string }) {
   );
 }
 
-async function loadView(): Promise<DashboardView> {
-  const ctx = await getSessionContext();
-  if (!ctx) return DEMO_DASHBOARD;
-  try {
-    const name = ctx.fullName.trim().split(/\s+/)[0] || "there";
-    return await getDashboardData(ctx.agencyId, name);
-  } catch (err) {
-    console.error("dashboard query failed, falling back to demo data", err);
-    return DEMO_DASHBOARD;
-  }
-}
-
 export default async function DashboardPage() {
-  const view = await loadView();
+  const ctx = await getSessionContext();
+
+  let view: DashboardView = DEMO_DASHBOARD;
+  let projects: Awaited<ReturnType<typeof invoiceableProjects>> = [];
+  if (ctx) {
+    try {
+      const name = ctx.fullName.trim().split(/\s+/)[0] || "there";
+      [view, projects] = await Promise.all([
+        getDashboardData(ctx.agencyId, name),
+        invoiceableProjects(ctx.agencyId),
+      ]);
+    } catch (err) {
+      console.error("dashboard query failed, falling back to demo data", err);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -65,13 +69,7 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <NewProjectButton variant="secondary" />
-          <button
-            disabled
-            title="Coming next"
-            className="inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-[var(--radius-sm)] bg-accent px-3.5 text-[13px] font-medium text-white opacity-50"
-          >
-            Create Invoice
-          </button>
+          <NewInvoiceButton projects={projects} />
         </div>
       </div>
 
@@ -110,7 +108,11 @@ export default async function DashboardPage() {
           <ClientGrowthBars data={view.clientGrowth} />
         </Card>
         <Card className="lg:col-span-6">
-          <CardHeader title="Recent Invoices" action={<ViewAll />} menu={false} />
+          <CardHeader
+            title="Recent Invoices"
+            action={view.isDemo ? <ViewAll /> : <ViewAll href="/invoices" />}
+            menu={false}
+          />
           <RecentInvoices rows={view.recentInvoices} />
         </Card>
         <Card className="lg:col-span-3">
