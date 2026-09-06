@@ -44,9 +44,19 @@ npm run db:migrate   # prisma migrate dev (needs DATABASE_URL + DIRECT_URL)
 npm run db:studio
 ```
 
+## Dashboard UI
+
+`/dashboard` is a high-fidelity **static** build (FlowMail-style reference).
+Charts are hand-built inline SVG in `src/components/dashboard/` — no chart
+library. All figures come from `src/lib/demo-data.ts`. Sprint 3 replaces the
+demo data with real queries; keep the component API, swap the data source.
+
+Aesthetic rules: purple accent only on primary action / active nav / primary
+chart series; green only on positive deltas & paid state; hairline borders,
+minimal shadow, `.tnum` on every number.
+
 ## Status
 
-Sprint 1 (Foundation & Auth) scaffolded: design tokens, Prisma schema,
-Supabase auth wiring, `(auth)` login/signup, `(dashboard)` shell with
-Sidebar + Header, `/api/auth/signup`. Not yet done: real Supabase project,
-migrations run, RLS policies, projects/invoices CRUD (Sprint 3+).
+Sprint 1 (Foundation & Auth) scaffolded + dashboard UI built. Not yet done:
+real Supabase project, migrations run, RLS policies, wiring demo data to the
+DB, projects/invoices/clients CRUD (Sprint 3+).
