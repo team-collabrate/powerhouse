@@ -99,6 +99,7 @@ export interface ClientDetail {
   city: string | null;
   country: string | null;
   isActive: boolean;
+  portalToken: string | null;
   createdAt: string;
   finance: {
     lifetimeValue: number;
@@ -141,6 +142,7 @@ export async function getClient(
       city: true,
       country: true,
       isActive: true,
+      portalToken: true,
       createdAt: true,
       projects: {
         orderBy: { createdAt: "desc" },
@@ -221,6 +223,7 @@ export async function getClient(
     city: c.city,
     country: c.country,
     isActive: c.isActive,
+    portalToken: c.portalToken,
     createdAt: c.createdAt.toISOString(),
     finance: { lifetimeValue, invoiced, paid, outstanding },
     projects,

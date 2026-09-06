@@ -27,6 +27,7 @@ export function InvoiceActions({
   const canInvoice = useCan("invoice:write");
   const canPay = useCan("payment:write");
   const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
 
@@ -34,11 +35,14 @@ export function InvoiceActions({
 
   async function post(path: string, label: string) {
     setBusy(label);
+    setNotice(null);
     const res = await fetch(path, { method: "POST" });
+    const j = await res.json().catch(() => null);
     setBusy(null);
-    if (res.ok) router.refresh();
-    else {
-      const j = await res.json().catch(() => null);
+    if (res.ok) {
+      if (j?.data?.note) setNotice(j.data.note as string);
+      router.refresh();
+    } else {
       alert(j?.error?.message ?? "Action failed");
     }
   }
@@ -53,7 +57,9 @@ export function InvoiceActions({
   const { status } = invoice;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col items-end gap-1.5">
+     {notice && <p className="text-[12px] text-ink-3">{notice}</p>}
+     <div className="flex flex-wrap items-center gap-2">
       {canInvoice && status === "draft" && (
         <button
           className={primary}
@@ -130,6 +136,7 @@ export function InvoiceActions({
             Cancel invoice
           </button>
         ))}
+     </div>
     </div>
   );
 }

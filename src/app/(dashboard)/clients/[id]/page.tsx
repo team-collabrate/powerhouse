@@ -8,6 +8,7 @@ import { Card, CardHeader } from "@/components/dashboard/Card";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ProjectStatusBadge } from "@/components/projects/ProjectStatusBadge";
 import { ClientActions } from "@/components/clients/ClientActions";
+import { PortalLinkCard } from "@/components/clients/PortalLinkCard";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,8 @@ export default async function ClientDetailPage({
           />
         </div>
       </Card>
+
+      <PortalLinkCard clientId={c.id} token={c.portalToken} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>

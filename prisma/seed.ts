@@ -10,6 +10,7 @@
   Re-running is idempotent (clears the agency's projects / clients / invoices
   first, then re-inserts).
 */
+import { randomBytes } from "crypto";
 import { PrismaClient, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -157,6 +158,14 @@ async function main() {
   );
   const cid = (name: string) =>
     clients[clientSpecs.findIndex((c) => c[0] === name)].id;
+
+  // portal links for the clients that have work
+  for (const c of clients.slice(0, 6)) {
+    await prisma.client.update({
+      where: { id: c.id },
+      data: { portalToken: randomBytes(18).toString("base64url") },
+    });
+  }
 
   // ---- projects: `teamCost` is the estimated internal labour cost, tuned so
   // each project lands on a sensible margin. Acre is deliberately under 15%

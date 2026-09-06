@@ -73,6 +73,7 @@ model Client {
   country     String?
   zipCode     String? @map("zip_code")
   isActive    Boolean @default(true) @map("is_active")
+  portalToken String? @unique @map("portal_token") // read-only client portal access
 
   projects Project[]
   invoices Invoice[]

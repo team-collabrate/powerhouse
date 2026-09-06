@@ -115,12 +115,26 @@ Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
 
 ## Status
 
-Done: Sprint 1 auth · dashboard UI + data layer · Projects CRUD · Expense
-logging · Invoices + payments · RLS + role enforcement · Clients CRUD ·
-Settings · Analytics.
+Done: Sprint 1 auth · dashboard · Projects · Expenses · Invoices+payments ·
+RLS+roles · Clients · Settings · Analytics · Client portal · Invoice email.
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: client portal / invoice email+PDF / team invites / overhead→project
-allocation.
+Next: invoice PDF · team invites · overhead→project allocation · milestones ·
+deploy/CI.
+
+### Client portal + invoice email
+
+- `Client.portalToken` (nullable unique). `/portal/[token]` — no auth (proxy
+  excludes `/portal`), no sidebar; branded (agency name/logo/brandColor)
+  read-only view of that client's invoices + project progress. NO cost /
+  profit / margin. Invalid token → 404. `getPortalData()` in
+  `src/lib/portal.ts`.
+- Token managed from the client detail page (`PortalLinkCard`): generate /
+  copy / regenerate → `POST /api/clients/[id]/portal-token`.
+- Invoice **Send** (`/api/invoices/[id]/send`) now emails the client via
+  Resend (`src/lib/email.ts`) with a link to `/portal/[token]` (lazily
+  generating the token if missing). Without `RESEND_API_KEY` it still flips
+  the status and returns a note. Needs `RESEND_FROM` (verified sender) +
+  `NEXT_PUBLIC_APP_URL` for real delivery.
 
 ### Analytics (`/analytics`, any signed-in user)
 
