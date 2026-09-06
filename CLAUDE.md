@@ -102,8 +102,8 @@ has inline "new client" creation.
 
 ## Going live with real data
 
-Supabase project already connected (ref `njptbivnjllynoiehqrv`). Migrations
-applied. Demo login: `demo@meridian.test` / `demodemo1234`.
+Fill `.env.local` from `.env.example` (Supabase project URL + keys + pooled
+DB URLs). Migrations are committed under `prisma/migrations/`.
 
 ```
 npm run db:migrate                          # after editing schema.prisma
