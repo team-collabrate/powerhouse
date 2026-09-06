@@ -58,9 +58,14 @@ npm run dev          # dev server
 npm run build        # prod build
 npm run typecheck    # tsc --noEmit
 npm run lint
+npm test             # scripts/check-dashboard.ts — pure-function assertions, no DB
 npm run db:migrate   # prisma migrate dev (needs DATABASE_URL + DIRECT_URL)
 npm run db:studio
 ```
+
+CI (`.github/workflows/ci.yml`, on push to main + PRs): `npm ci` →
+`next typegen` → typecheck → lint (`--max-warnings 0`) → `npm test` → build.
+No DB/secrets needed — every page guards on missing env.
 
 ## Dashboard
 
