@@ -62,8 +62,9 @@ const input: DashInputs = {
     { invoiceNumber: "INV-2026-008", amount: 9_000, status: "sent", dueDate: d(-45), clientName: "Gamma" }, // overdue + stale
   ],
   payments: [
-    { amount: 25_000, date: d(-4) }, // this month (Sep)
-    { amount: 10_000, date: new Date(2026, 7, 20) }, // last month (Aug)
+    { amount: 25_000, date: d(-4) }, // this month, Sep 11 (MTD through Sep 15)
+    { amount: 10_000, date: new Date(2026, 7, 10) }, // Aug 10 — inside the Aug 1–15 comparison window
+    { amount: 99_000, date: new Date(2026, 7, 28) }, // Aug 28 — outside the comparison window, must be ignored
   ],
   clients: [
     { createdAt: monthsBack(4) },
@@ -90,7 +91,7 @@ check("greeting passes through", v.greetingName === "Bella");
 check("not flagged as demo", v.isDemo === false);
 check("revenue MTD = $25,000", v.kpis[0].value === "$25,000", v.kpis[0].value);
 check(
-  "revenue delta = +150.0% up",
+  "revenue delta = +150.0% up (same-period MoM, ignores Aug 28)",
   v.kpis[0].delta?.value === "+150.0%" && v.kpis[0].delta?.direction === "up",
   v.kpis[0].delta,
 );

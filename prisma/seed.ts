@@ -1,29 +1,31 @@
 /*
-  Seeds an agency with realistic demo data so the dashboard shows live numbers.
+  Seeds an agency with realistic demo data so the dashboard shows live numbers
+  that look like a healthy studio ~1 week into the month.
 
-  By default it creates (or reuses) a standalone "Meridian Studio" demo agency.
-  To attach the data to YOUR signed-up account instead, set SEED_EMAIL:
+  Default: creates/reuses a standalone "Meridian Studio" demo agency.
+  To attach the data to YOUR signed-up account instead:
 
-    SEED_EMAIL=you@example.com npm run db:seed
+    add  SEED_EMAIL="you@example.com"  to .env.local, then  npm run db:seed
 
-  Re-running is idempotent: it clears the agency's projects / clients / invoices
-  first, then re-inserts.
+  Re-running is idempotent (clears the agency's projects / clients / invoices
+  first, then re-inserts).
 */
 import { PrismaClient, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const daysAgo = (d: number) => {
+const day = (offset: number) => {
   const x = new Date();
-  x.setDate(x.getDate() - d);
+  x.setHours(12, 0, 0, 0);
+  x.setDate(x.getDate() + offset);
   return x;
 };
-const monthsAgo = (m: number) => {
-  const x = new Date();
-  x.setMonth(x.getMonth() - m, 12);
-  return x;
+const monthStart = (back: number) => {
+  const n = new Date();
+  return new Date(n.getFullYear(), n.getMonth() - back, 8, 12);
 };
-const D = (n: number) => new Prisma.Decimal(n);
+const D = (v: number) => new Prisma.Decimal(Math.round(v * 100) / 100);
+const isWeekday = (d: Date) => d.getDay() !== 0 && d.getDay() !== 6;
 
 async function resolveAgency() {
   const email = process.env.SEED_EMAIL;
@@ -31,12 +33,11 @@ async function resolveAgency() {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new Error(
-        `SEED_EMAIL=${email} has no user row. Sign up first, then re-run.`,
+        `SEED_EMAIL=${email} has no user row yet. Sign up in the app first, then re-run.`,
       );
     }
     return { agencyId: user.agencyId, primaryUserId: user.id };
   }
-
   const agency = await prisma.agency.upsert({
     where: { subdomain: "meridian-demo" },
     update: {},
@@ -54,7 +55,6 @@ async function resolveAgency() {
       fullName: "Bella Ford",
       role: "admin",
       agencyId: agency.id,
-      internalCostRate: D(0),
     },
   });
   return { agencyId: agency.id, primaryUserId: owner.id };
@@ -63,7 +63,6 @@ async function resolveAgency() {
 async function main() {
   const { agencyId, primaryUserId } = await resolveAgency();
 
-  // --- reset agency-scoped demo data ---
   await prisma.payment.deleteMany({ where: { invoice: { agencyId } } });
   await prisma.invoice.deleteMany({ where: { agencyId } });
   await prisma.projectHours.deleteMany({ where: { project: { agencyId } } });
@@ -73,200 +72,259 @@ async function main() {
   await prisma.client.deleteMany({ where: { agencyId } });
   await prisma.companyExpense.deleteMany({ where: { agencyId } });
   await prisma.user.deleteMany({
-    where: { agencyId, id: { not: primaryUserId }, email: { endsWith: "@meridian.demo" } },
+    where: {
+      agencyId,
+      id: { not: primaryUserId },
+      email: { endsWith: "@meridian.demo" },
+    },
   });
 
-  // --- team (billable cost rates) ---
-  const team = await Promise.all(
-    [
-      ["Priya Anand", 95],
-      ["Marcus Lee", 120],
-      ["Tomás Rivera", 80],
-      ["Dana Whitfield", 140],
-    ].map(([fullName, rate], i) =>
-      prisma.user.create({
-        data: {
-          email: `member${i + 1}@meridian.demo`,
-          fullName: fullName as string,
-          role: "team_member",
-          agencyId,
-          internalCostRate: D(rate as number),
-        },
-      }),
-    ),
-  );
+  // ---- team ----
   await prisma.user.update({
     where: { id: primaryUserId },
     data: { internalCostRate: D(150) },
   });
-  const staff = [{ id: primaryUserId, rate: 150 }, ...team.map((t) => ({ id: t.id, rate: Number(t.internalCostRate) }))];
+  const team = await Promise.all(
+    (
+      [
+        ["Priya Anand", 95],
+        ["Marcus Lee", 120],
+        ["Tomás Rivera", 80],
+        ["Dana Whitfield", 135],
+      ] as const
+    ).map(([fullName, rate], i) =>
+      prisma.user.create({
+        data: {
+          email: `member${i + 1}.${agencyId.slice(-6)}@meridian.demo`,
+          fullName,
+          role: "team_member",
+          agencyId,
+          internalCostRate: D(rate),
+        },
+      }),
+    ),
+  );
+  const staff = [
+    { id: primaryUserId, rate: 150 },
+    ...team.map((t) => ({ id: t.id, rate: Number(t.internalCostRate) })),
+  ];
 
-  // --- clients spread across the last 6 months ---
+  // ---- clients (weighted toward recent months) ----
   const clientSpecs = [
+    // projects reference the first 8 by company name
     ["Northwind Traders", "Isla Fenn", 5],
-    ["Helio Labs", "Ken Ortho", 5],
-    ["Acre & Co.", "Rosa Dane", 4],
+    ["Cobalt Health", "Nina Park", 4],
+    ["Helio Labs", "Ken Ortho", 4],
     ["Vector Studio", "Paul Mreen", 3],
+    ["Acre & Co.", "Rosa Dane", 2],
     ["Meridian Group", "Ada Cole", 2],
     ["Brightpath", "Sam Rueda", 1],
-    ["Cobalt Health", "Nina Park", 0],
+    ["Lumen Retail", "Guy Tran", 1],
+    // additional clients for a fuller, gently rising growth curve
+    ["Sable & Finch", "Nora Beck", 5],
+    ["Pinehill Co-op", "Omar Diaz", 3],
+    ["Kestrel Media", "Ivy Lang", 3],
+    ["Drift Coffee", "Wes Munro", 2],
+    ["Halcyon Spa", "Tara Vance", 1],
+    ["Meadowlark", "Cole Prieto", 0],
+    ["Fernbank Cafe", "Mara Ives", 0],
+    ["Onyx Fitness", "Leo Six", 0],
+    ["Bluewave Swim", "Jae Sun", 0],
   ] as const;
   const clients = await Promise.all(
-    clientSpecs.map(([name, contact, m]) =>
+    clientSpecs.map(([name, contact, back]) =>
       prisma.client.create({
         data: {
           agencyId,
           name: contact,
           companyName: name,
-          email: `hello@${name.toLowerCase().replace(/[^a-z]/g, "")}.com`,
-          createdAt: monthsAgo(m),
+          email: `hello@${name.toLowerCase().replace(/[^a-z]/g, "")}.example`,
+          createdAt: monthStart(back),
         },
       }),
     ),
   );
-  const clientId = (name: string) =>
+  const cid = (name: string) =>
     clients[clientSpecs.findIndex((c) => c[0] === name)].id;
 
-  // --- projects ---
-  const projectSpecs = [
-    { name: "Northwind Rebrand", client: "Northwind Traders", service: "design", status: "active", value: 84_000, overhead: 4_000 },
-    { name: "Helio App Launch", client: "Helio Labs", service: "web_dev", status: "active", value: 120_000, overhead: 6_000 },
-    { name: "Acre Storefront", client: "Acre & Co.", service: "web_dev", status: "active", value: 46_000, overhead: 3_000 },
-    { name: "Vector Site Refresh", client: "Vector Studio", service: "web_dev", status: "active", value: 38_000, overhead: 2_000 },
-    { name: "Meridian Campaign Q3", client: "Meridian Group", service: "marketing", status: "active", value: 52_000, overhead: 2_500 },
-    { name: "Brightpath Advisory", client: "Brightpath", service: "consulting", status: "active", value: 30_000, overhead: 1_500 },
-    { name: "Cobalt Brand System", client: "Cobalt Health", service: "design", status: "delivered", value: 64_000, overhead: 3_000 },
-    { name: "Helio Growth Retainer", client: "Helio Labs", service: "marketing", status: "active", value: 24_000, overhead: 1_000 },
+  // ---- projects: `labor` is the total $ of internal time to log over the
+  // window, tuned so each project lands on a sensible margin. Acre is
+  // deliberately under 15% so the "under margin" insight fires. ----
+  const P = [
+    { name: "Northwind Rebrand", client: "Northwind Traders", service: "design", status: "active", value: 84_000, overhead: 4_000, since: 34, labor: 30_000, people: 2, progress: 62 },
+    { name: "Helio App Launch", client: "Helio Labs", service: "web_dev", status: "active", value: 145_000, overhead: 7_000, since: 34, labor: 44_000, people: 3, progress: 48 },
+    { name: "Acre Storefront", client: "Acre & Co.", service: "web_dev", status: "active", value: 32_000, overhead: 2_500, since: 34, labor: 17_000, people: 2, progress: 70, bigExpense: 7_000 },
+    { name: "Vector Site Refresh", client: "Vector Studio", service: "web_dev", status: "active", value: 41_000, overhead: 2_000, since: 30, labor: 15_000, people: 1, progress: 55 },
+    { name: "Meridian Campaign", client: "Meridian Group", service: "marketing", status: "active", value: 52_000, overhead: 2_500, since: 28, labor: 20_000, people: 2, progress: 44 },
+    { name: "Brightpath Advisory", client: "Brightpath", service: "consulting", status: "active", value: 33_000, overhead: 1_500, since: 24, labor: 13_000, people: 1, progress: 38 },
+    { name: "Lumen Storefront", client: "Lumen Retail", service: "web_dev", status: "active", value: 60_000, overhead: 3_000, since: 12, labor: 16_000, people: 2, progress: 22 },
+    { name: "Cobalt Brand System", client: "Cobalt Health", service: "design", status: "delivered", value: 64_000, overhead: 3_000, since: 0, labor: 0, people: 0, progress: 100 },
   ];
 
   const projects = await Promise.all(
-    projectSpecs.map((p) =>
+    P.map((p) =>
       prisma.project.create({
         data: {
           agencyId,
-          clientId: clientId(p.client),
+          clientId: cid(p.client),
           name: p.name,
           status: p.status,
           serviceType: p.service,
           contractValue: D(p.value),
           allocatedOverhead: D(p.overhead),
-          startDate: daysAgo(60),
-          deadline: daysAgo(-30),
-          progressPercentage: 55,
+          startDate: day(-Math.max(p.since, 20) - 20),
+          deadline: day(40),
+          progressPercentage: p.progress,
+          createdAt: day(-Math.max(p.since, 20) - 20),
         },
       }),
     ),
   );
 
-  // --- hours: spread across the last 30 days, weighted so margins vary ---
+  // ---- hours: spread each project's labor budget across its weekdays ----
   const hourRows: Prisma.ProjectHoursCreateManyInput[] = [];
   projects.forEach((proj, idx) => {
-    const intensity = [3, 5, 8, 4, 4, 2, 1, 2][idx]; // Acre (idx 2) burns hot -> thin margin
-    for (let day = 0; day < 30; day += 2) {
-      const person = staff[(idx + day) % staff.length];
-      hourRows.push({
-        projectId: proj.id,
-        userId: person.id,
-        hoursLogged: D(intensity + ((day % 3) - 1)),
-        dateLogged: daysAgo(day),
-        description: "Project work",
-      });
+    const spec = P[idx];
+    if (spec.people === 0 || spec.labor === 0) return;
+    const days: Date[] = [];
+    for (let d = Math.min(spec.since, 34); d >= 0; d--) {
+      const date = day(-d);
+      if (isWeekday(date)) days.push(date);
     }
+    const perDay = spec.labor / days.length;
+    days.forEach((date, di) => {
+      for (let person = 0; person < spec.people; person++) {
+        const who = staff[(idx + person + di) % staff.length];
+        const wobble = 1 + (((di + person) % 5) - 2) * 0.12; // ~0.76–1.24
+        const dayCost = (perDay / spec.people) * wobble;
+        hourRows.push({
+          projectId: proj.id,
+          userId: who.id,
+          hoursLogged: D(Math.max(0.5, dayCost / who.rate)),
+          dateLogged: date,
+          description: "Project work",
+        });
+      }
+    });
   });
   await prisma.projectHours.createMany({ data: hourRows });
 
-  // --- project expenses ---
+  // ---- project expenses: 5 small items per project at well-spread dates ----
   const expenseRows: Prisma.ProjectExpenseCreateManyInput[] = [];
+  const cats = ["software", "design", "freelance", "hosting", "materials"];
   projects.forEach((proj, idx) => {
-    [
-      ["freelance", 4200],
-      ["software", 900],
-      ["design", 1500],
-    ].forEach(([category, amount], j) => {
+    const spec = P[idx];
+    for (let k = 0; k < 5; k++) {
+      const back = 4 + ((idx * 7 + k * 11) % 27); // 4..30, deterministic spread
       expenseRows.push({
         projectId: proj.id,
-        category: category as string,
-        amount: D((amount as number) * (1 + idx * 0.15)),
-        description: `${category} — ${proj.name}`,
-        dateIncurred: daysAgo(5 + j * 7),
+        category: cats[k],
+        amount: D(320 + ((idx + k) % 4) * 260), // 320..1100
+        description: `${cats[k]} — ${proj.name}`,
+        dateIncurred: day(-back),
         createdBy: primaryUserId,
       });
-    });
+    }
+    if (spec.bigExpense) {
+      expenseRows.push({
+        projectId: proj.id,
+        category: "freelance",
+        amount: D(spec.bigExpense),
+        description: `Contract build help — ${proj.name}`,
+        dateIncurred: day(-19),
+        createdBy: primaryUserId,
+      });
+    }
   });
   await prisma.projectExpense.createMany({ data: expenseRows });
 
-  // --- invoices + payments ---
-  const now = new Date();
-  const yr = now.getFullYear();
-  const invoiceSpecs = [
-    { project: "Helio App Launch", amount: 24_000, status: "paid", issued: daysAgo(20), due: daysAgo(6), paidOn: daysAgo(4) },
-    { project: "Northwind Rebrand", amount: 18_500, status: "sent", issued: daysAgo(12), due: daysAgo(-15) },
-    { project: "Acre Storefront", amount: 9_200, status: "sent", issued: daysAgo(55), due: daysAgo(40) }, // -> overdue
-    { project: "Vector Site Refresh", amount: 31_750, status: "paid", issued: daysAgo(38), due: daysAgo(20), paidOn: daysAgo(15) },
-    { project: "Meridian Campaign Q3", amount: 12_000, status: "draft", issued: daysAgo(2), due: daysAgo(-28) },
-    { project: "Cobalt Brand System", amount: 40_000, status: "paid", issued: monthsAgo(1), due: daysAgo(45), paidOn: daysAgo(38) },
-    { project: "Brightpath Advisory", amount: 15_000, status: "sent", issued: daysAgo(50), due: daysAgo(35) }, // -> overdue
-  ];
+  const yr = new Date().getFullYear();
+  let seq = 20;
+  const invNo = () => `INV-${yr}-${String(seq++).padStart(3, "0")}`;
+  const helio = projects.find((p) => p.name === "Helio App Launch")!;
+  const northwind = projects.find((p) => p.name === "Northwind Rebrand")!;
 
-  for (let i = 0; i < invoiceSpecs.length; i++) {
-    const spec = invoiceSpecs[i];
-    const proj = projects.find((p) => p.name === spec.project)!;
+  async function paidInvoice(project: { id: string; clientId: string }, amount: number, back: number) {
     const inv = await prisma.invoice.create({
+      data: {
+        agencyId,
+        clientId: project.clientId,
+        projectId: project.id,
+        invoiceNumber: invNo(),
+        amount: D(amount),
+        status: "paid",
+        issueDate: day(-back - 6),
+        dueDate: day(-back + 3),
+        sentDate: day(-back - 6),
+        paidDate: day(-back),
+        createdBy: primaryUserId,
+      },
+    });
+    await prisma.payment.create({
+      data: {
+        invoiceId: inv.id,
+        amount: D(amount),
+        paymentDate: day(-back),
+        paymentMethod: back % 2 ? "card" : "bank_transfer",
+        recordedBy: primaryUserId,
+      },
+    });
+  }
+
+  // Historical milestone payments — build lifetime revenue + the MoM baseline
+  // (two land in the first days of last month), none inside the 30-day chart.
+  await paidInvoice(helio, 41_000, 62);
+  await paidInvoice(projects.find((p) => p.name === "Cobalt Brand System")!, 34_000, 50);
+  // two land in the first days of last month -> the MoM comparison baseline
+  await paidInvoice(northwind, 27_000, 37);
+  await paidInvoice(projects.find((p) => p.name === "Vector Site Refresh")!, 30_000, 34);
+
+  // Progress payments every ~2.5 days across the 30-day window -> the revenue
+  // curve on the profit chart, plus a believable month-to-date figure.
+  // ~18 progress payments, roughly every 1.6 days, so any 7-day window catches
+  // a consistent number of them and the revenue line stays smooth.
+  for (let i = 0; i < 18; i++) {
+    const back = Math.max(1, Math.round(30 - i * 1.65));
+    const amount = 12_500 + (i % 3) * 1_500 + (i % 2) * 1_100;
+    await paidInvoice(i % 2 ? helio : northwind, amount, back);
+  }
+
+  // Open receivables — created last so they're the "recent" rows in the table.
+  const open: [string, number, number, number, string][] = [
+    // project, amount, issuedBack, dueBack, status
+    ["Meridian Campaign", 18_000, 10, -18, "sent"],
+    ["Lumen Storefront", 12_500, 3, -27, "draft"],
+    ["Helio App Launch", 24_000, 7, -21, "sent"],
+    ["Acre Storefront", 9_800, 54, 39, "sent"], // overdue >30d
+    ["Brightpath Advisory", 14_500, 46, 34, "sent"], // overdue >30d
+  ];
+  for (const [name, amount, issued, due, status] of open) {
+    const proj = projects.find((p) => p.name === name)!;
+    await prisma.invoice.create({
       data: {
         agencyId,
         clientId: proj.clientId,
         projectId: proj.id,
-        invoiceNumber: `INV-${yr}-${String(40 - i).padStart(3, "0")}`,
-        amount: D(spec.amount),
-        status: spec.status,
-        issueDate: spec.issued,
-        dueDate: spec.due,
-        sentDate: spec.status === "draft" ? null : spec.issued,
-        paidDate: spec.paidOn ?? null,
+        invoiceNumber: invNo(),
+        amount: D(amount),
+        status,
+        issueDate: day(-issued),
+        dueDate: day(-due),
+        sentDate: status === "draft" ? null : day(-issued),
         createdBy: primaryUserId,
       },
     });
-    if (spec.paidOn) {
-      await prisma.payment.create({
-        data: {
-          invoiceId: inv.id,
-          amount: D(spec.amount),
-          paymentDate: spec.paidOn,
-          paymentMethod: "bank_transfer",
-          recordedBy: primaryUserId,
-        },
-      });
-    }
   }
 
-  // an extra payment landing this month so Revenue (MTD) is non-trivial
-  const helioRetainer = projects.find((p) => p.name === "Helio Growth Retainer")!;
-  const retainerInv = await prisma.invoice.create({
-    data: {
-      agencyId,
-      clientId: helioRetainer.clientId,
-      projectId: helioRetainer.id,
-      invoiceNumber: `INV-${yr}-041`,
-      amount: D(8_000),
-      status: "paid",
-      issueDate: daysAgo(10),
-      dueDate: daysAgo(2),
-      sentDate: daysAgo(10),
-      paidDate: daysAgo(1),
-      createdBy: primaryUserId,
-    },
-  });
-  await prisma.payment.create({
-    data: {
-      invoiceId: retainerInv.id,
-      amount: D(8_000),
-      paymentDate: daysAgo(1),
-      paymentMethod: "card",
-      recordedBy: primaryUserId,
-    },
-  });
-
-  console.log(`Seeded agency ${agencyId}: ${projects.length} projects, ${clients.length} clients, ${invoiceSpecs.length + 1} invoices.`);
+  const [pc, cc, ic, hc] = await prisma.$transaction([
+    prisma.project.count({ where: { agencyId } }),
+    prisma.client.count({ where: { agencyId } }),
+    prisma.invoice.count({ where: { agencyId } }),
+    prisma.projectHours.count({ where: { project: { agencyId } } }),
+  ]);
+  console.log(
+    `Seeded agency ${agencyId}: ${pc} projects, ${cc} clients, ${ic} invoices, ${hc} time entries.`,
+  );
 }
 
 main()

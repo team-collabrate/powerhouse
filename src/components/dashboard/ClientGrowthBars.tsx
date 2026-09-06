@@ -20,25 +20,18 @@ export function ClientGrowthBars({ data }: { data: ClientGrowthView }) {
             key={b.label}
             className="flex h-full flex-1 flex-col items-center justify-end gap-2"
           >
-            <div className="relative flex w-full flex-1 items-end justify-center">
-              {b.highlight && (
-                <span className="tnum absolute -top-1 left-1/2 -translate-x-1/2 rounded-md bg-ink px-1.5 py-0.5 text-[10px] font-medium text-white">
-                  {b.value}
-                </span>
-              )}
-              <div
-                className="w-full max-w-[26px] rounded-[5px]"
-                style={{
-                  height: `${Math.max(3, (b.value / yMax) * 100)}%`,
-                  background: b.highlight
-                    ? "var(--accent)"
-                    : "var(--surface-sunken)",
-                  border: b.highlight
-                    ? "none"
-                    : "1px solid var(--hairline-strong)",
-                }}
-              />
-            </div>
+            {b.highlight && (
+              <span className="tnum rounded-md bg-ink px-1.5 py-0.5 text-[10px] font-medium text-white">
+                {b.value}
+              </span>
+            )}
+            <div
+              className="w-full max-w-[26px] rounded-[5px]"
+              style={{
+                height: `${Math.max(5, (b.value / yMax) * 90)}%`,
+                background: b.highlight ? "var(--accent)" : "#e3e2e7",
+              }}
+            />
             <span className="text-[11px] text-ink-3">{b.label}</span>
           </div>
         ))}

@@ -80,6 +80,8 @@ export function buildDashboardView(input: DashInputs): DashboardView {
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  // month-to-date comparison uses the SAME day-of-month window last month
+  const prevMonthSameDay = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
   const windowStart = new Date(now);
   windowStart.setDate(now.getDate() - 29);
   windowStart.setHours(0, 0, 0, 0);
@@ -106,7 +108,7 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     .filter((p) => p.date >= monthStart)
     .reduce((s, p) => s + p.amount, 0);
   const revenuePrev = payments
-    .filter((p) => p.date >= prevMonthStart && p.date < monthStart)
+    .filter((p) => p.date >= prevMonthStart && p.date < prevMonthSameDay)
     .reduce((s, p) => s + p.amount, 0);
   const avgMargin =
     active.length > 0
@@ -144,43 +146,48 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     { id: "outstanding", label: "Outstanding", value: money(outstanding), icon: "clock" },
   ];
 
-  // ---- profit series: 12 buckets over the last 30 days ----
+  // ---- profit series: rolling 7-day totals sampled every ~2.5 days ----
+  // A trailing window keeps the lines readable when real cash flow is lumpy
+  // (a single milestone payment gets spread across the week it belongs to).
   const BUCKETS = 12;
   const bucketDays = 30 / BUCKETS;
-  const allHours = projects.flatMap((p) =>
-    p.hours.map((h) => ({ date: h.date, cost: h.hoursLogged * h.rate })),
-  );
-  const allExpenses = projects.flatMap((p) =>
-    p.expenses.map((e) => ({ date: e.date, amount: e.amount })),
-  );
+  const TRAIL_MS = 7 * 24 * 3600 * 1000;
+  const costEvents = [
+    ...projects.flatMap((p) =>
+      p.hours.map((h) => ({ date: h.date, amount: h.hoursLogged * h.rate })),
+    ),
+    ...projects.flatMap((p) =>
+      p.expenses.map((e) => ({ date: e.date, amount: e.amount })),
+    ),
+  ];
+  const sumIn = <T extends { date: Date; amount: number }>(
+    rows: T[],
+    from: Date,
+    to: Date,
+  ) => rows.filter((r) => r.date >= from && r.date < to).reduce((s, r) => s + r.amount, 0);
 
   const points: ProfitPoint[] = [];
-  for (let b = 0; b < BUCKETS; b++) {
-    const start = new Date(windowStart);
-    start.setDate(windowStart.getDate() + Math.round(b * bucketDays));
+  for (let b = 1; b <= BUCKETS; b++) {
     const end = new Date(windowStart);
-    end.setDate(windowStart.getDate() + Math.round((b + 1) * bucketDays));
+    end.setDate(windowStart.getDate() + Math.round(b * bucketDays));
+    const from = new Date(Math.max(windowStart.getTime(), end.getTime() - TRAIL_MS));
 
-    const revenue = payments
-      .filter((p) => p.date >= start && p.date < end)
-      .reduce((s, p) => s + p.amount, 0);
-    const cost =
-      allHours
-        .filter((h) => h.date >= start && h.date < end)
-        .reduce((s, h) => s + h.cost, 0) +
-      allExpenses
-        .filter((e) => e.date >= start && e.date < end)
-        .reduce((s, e) => s + e.amount, 0);
+    const revenue = sumIn(
+      payments.map((p) => ({ date: p.date, amount: p.amount })),
+      from,
+      end,
+    );
+    const cost = sumIn(costEvents, from, end);
 
     points.push({
-      label: start.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      label: end.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       revenue: Math.round(revenue),
       cost: Math.round(cost),
       profit: Math.round(revenue - cost),
     });
   }
   const yMax = ceilCurrency(
-    Math.max(1, ...points.flatMap((p) => [p.revenue, p.cost, p.profit])),
+    Math.max(1, ...points.flatMap((p) => [p.revenue, p.cost, Math.max(0, p.profit)])),
   );
 
   // ---- service mix (share of contract value) ----
@@ -228,7 +235,7 @@ export function buildDashboardView(input: DashInputs): DashboardView {
   }
   const clientGrowth = {
     bars,
-    yMax: Math.max(4, Math.ceil(Math.max(...bars.map((b) => b.value)) * 1.15)),
+    yMax: Math.max(2, Math.ceil(Math.max(...bars.map((b) => b.value)) * 1.05)),
     netNew: bars.reduce((s, b) => s + b.value, 0),
     caption: `Net new clients per month, ${bars[0].label} to ${bars[bars.length - 1].label}.`,
   };
@@ -303,9 +310,8 @@ export async function getDashboardData(
   greetingName: string,
 ): Promise<DashboardView> {
   const now = new Date();
-  const windowStart = new Date(now);
-  windowStart.setDate(now.getDate() - 29);
-  windowStart.setHours(0, 0, 0, 0);
+  // fetch payments back to the start of last month so month-over-month works
+  const paymentsSince = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const sixMonthsStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
   const [projects, invoices, payments, clients] = await Promise.all([
@@ -341,7 +347,7 @@ export async function getDashboardData(
       },
     }),
     prisma.payment.findMany({
-      where: { invoice: { agencyId }, paymentDate: { gte: windowStart } },
+      where: { invoice: { agencyId }, paymentDate: { gte: paymentsSince } },
       select: { amount: true, paymentDate: true },
     }),
     prisma.client.findMany({
