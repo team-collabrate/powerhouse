@@ -1,11 +1,11 @@
 /*
-  Sanity check for buildDashboardView — verifies the aggregation math without
-  a database. Run: npx tsx scripts/check-dashboard.ts
+  Sanity checks that don't need a database. Run: npm test
 */
 import {
   buildDashboardView,
   type DashInputs,
 } from "@/lib/queries/dashboard";
+import { can } from "@/lib/permissions";
 
 const now = new Date("2026-09-15T12:00:00Z");
 const d = (offset: number) => {
@@ -133,6 +133,16 @@ check(
 check("client growth: 6 bars", v.clientGrowth.bars.length === 6);
 check("client growth netNew = 4", v.clientGrowth.netNew === 4, v.clientGrowth.netNew);
 check("last bar highlighted", v.clientGrowth.bars[5].highlight === true);
+
+console.log("\npermissions:");
+check("admin can manage settings", can("admin", "settings:manage"));
+check("manager can write invoices", can("manager", "invoice:write"));
+check("manager cannot manage team", !can("manager", "team:manage"));
+check("team_member can write expenses", can("team_member", "expense:write"));
+check("team_member cannot write projects", !can("team_member", "project:write"));
+check("team_member cannot write invoices", !can("team_member", "invoice:write"));
+check("client can do nothing", !can("client", "expense:write"));
+check("unknown role denied", !can("nonsense", "project:write"));
 
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

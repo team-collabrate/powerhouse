@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ok, validationError, requireSession } from "@/lib/api";
+import { ok, validationError, requireSession , requireCapability} from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 
 export async function GET() {
@@ -29,7 +29,7 @@ const createSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const auth = await requireSession();
+  const auth = await requireCapability("client:write");
   if (auth instanceof NextResponse) return auth;
 
   const body = await request.json().catch(() => null);

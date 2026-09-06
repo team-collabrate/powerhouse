@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ok, fail, requireSession } from "@/lib/api";
+import { ok, fail, requireCapability} from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { syncInvoicePaidState } from "@/lib/invoice-sync";
 import { formatCurrency } from "@/lib/format";
@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/format";
 type Params = { params: Promise<{ id: string }> };
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const auth = await requireSession();
+  const auth = await requireCapability("payment:write");
   if (auth instanceof NextResponse) return auth;
   const { id } = await params;
 

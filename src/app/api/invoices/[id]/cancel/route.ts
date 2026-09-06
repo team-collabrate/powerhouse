@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ok, fail, requireSession } from "@/lib/api";
+import { ok, fail, requireCapability} from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(_request: Request, { params }: Params) {
-  const auth = await requireSession();
+  const auth = await requireCapability("invoice:write");
   if (auth instanceof NextResponse) return auth;
   const { id } = await params;
 

@@ -2,6 +2,7 @@
 
 import { FileText } from "react-feather";
 import { InvoiceDialog } from "./InvoiceDialog";
+import { useCan } from "@/components/providers/SessionProvider";
 import type { InvoiceProjectOption } from "@/lib/queries/invoices";
 
 export function NewInvoiceButton({
@@ -11,6 +12,7 @@ export function NewInvoiceButton({
   projects: InvoiceProjectOption[];
   variant?: "primary" | "secondary";
 }) {
+  if (!useCan("invoice:write")) return null;
   const disabled = projects.length === 0;
   return (
     <InvoiceDialog

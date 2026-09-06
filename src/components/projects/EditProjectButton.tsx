@@ -3,8 +3,10 @@
 import { Edit2 } from "react-feather";
 import { ProjectDialog } from "./ProjectDialog";
 import type { ProjectDetail } from "@/lib/queries/projects";
+import { useCan } from "@/components/providers/SessionProvider";
 
 export function EditProjectButton({ project }: { project: ProjectDetail }) {
+  if (!useCan("project:write")) return null;
   return (
     <ProjectDialog
       project={project}

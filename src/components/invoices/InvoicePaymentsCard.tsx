@@ -5,6 +5,7 @@ import { Trash2 } from "react-feather";
 import { Card } from "@/components/dashboard/Card";
 import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { PaymentDialog } from "./PaymentDialog";
+import { useCan } from "@/components/providers/SessionProvider";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
   PAYMENT_METHOD_LABELS,
@@ -14,10 +15,12 @@ import {
 
 export function InvoicePaymentsCard({ invoice }: { invoice: InvoiceDetail }) {
   const router = useRouter();
+  const canPay = useCan("payment:write");
   const canRecord =
-    invoice.status === "sent" ||
-    invoice.status === "partial" ||
-    invoice.status === "overdue";
+    canPay &&
+    (invoice.status === "sent" ||
+      invoice.status === "partial" ||
+      invoice.status === "overdue");
 
   async function remove(id: string) {
     await fetch(`/api/payments/${id}`, { method: "DELETE" });
@@ -61,14 +64,15 @@ export function InvoicePaymentsCard({ invoice }: { invoice: InvoiceDetail }) {
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                {["Date", "Method", "Reference", "Amount", ""].map((h) => (
+                {["Date", "Method", "Reference", "Amount"].map((h) => (
                   <th
                     key={h}
-                    className="eyebrow px-3 pb-2 pt-1 text-left font-semibold last:w-10"
+                    className="eyebrow px-3 pb-2 pt-1 text-left font-semibold"
                   >
                     {h}
                   </th>
                 ))}
+                {canPay && <th className="w-10" />}
               </tr>
             </thead>
             <tbody>
@@ -87,18 +91,20 @@ export function InvoicePaymentsCard({ invoice }: { invoice: InvoiceDetail }) {
                   <td className="tnum px-3 py-2 text-[12.5px] font-medium text-ink">
                     {formatCurrency(p.amount)}
                   </td>
-                  <td className="px-2 py-1.5">
-                    <div className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                      <ConfirmButton
-                        label="Delete payment"
-                        question="Delete?"
-                        confirmLabel="Delete"
-                        onConfirm={() => remove(p.id)}
-                      >
-                        <Trash2 size={13} />
-                      </ConfirmButton>
-                    </div>
-                  </td>
+                  {canPay && (
+                    <td className="px-2 py-1.5">
+                      <div className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                        <ConfirmButton
+                          label="Delete payment"
+                          question="Delete?"
+                          confirmLabel="Delete"
+                          onConfirm={() => remove(p.id)}
+                        >
+                          <Trash2 size={13} />
+                        </ConfirmButton>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

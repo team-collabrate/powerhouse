@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ok, fail, validationError, requireSession } from "@/lib/api";
+import {
+  ok,
+  fail,
+  validationError,
+  requireSession,
+  requireCapability,
+} from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { projectCreateSchema } from "@/lib/validation/project";
 import { listProjects, type ProjectStatus } from "@/lib/queries/projects";
@@ -18,7 +24,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireSession();
+  const auth = await requireCapability("project:write");
   if (auth instanceof NextResponse) return auth;
 
   const body = await request.json().catch(() => null);

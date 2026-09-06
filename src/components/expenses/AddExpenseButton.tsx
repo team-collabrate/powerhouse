@@ -2,12 +2,14 @@
 
 import { Plus } from "react-feather";
 import { ExpenseDialog } from "./ExpenseDialog";
+import { useCan } from "@/components/providers/SessionProvider";
 
 export function AddExpenseButton({
   projects,
 }: {
   projects: { id: string; name: string }[];
 }) {
+  if (!useCan("expense:write")) return null;
   return (
     <ExpenseDialog
       projects={projects}

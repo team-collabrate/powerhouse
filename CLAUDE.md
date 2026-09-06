@@ -34,10 +34,22 @@ subqueries). Single source of truth: `src/lib/profit.ts`.
 The dashboard profit chart amortises each active project's `teamCost` linearly
 across its start→deadline span (fallback 90 days) to get a daily cost figure.
 
-## Multi-tenancy
+## Multi-tenancy & permissions
 
-Every tenant-scoped query MUST filter by `agencyId` from the signed-in user.
-Enforce in the API layer; add Supabase RLS policies as defense-in-depth.
+Every tenant-scoped query MUST filter by `agencyId` from the signed-in user
+(app layer). **RLS** (migration `20260906140000_row_level_security`) is the
+DB-level backstop: the app connects as `postgres` (BYPASSRLS) so Prisma is
+unaffected, but every table has RLS on + a SELECT policy scoped by
+`public.current_agency_id()`, and no write policy for anon/authenticated —
+this closes direct PostgREST access via the public anon key.
+
+**Roles** — `src/lib/permissions.ts` `can(role, capability)`. Matrix:
+admin = everything; manager = project/client/expense/invoice/payment writes;
+team_member = expense writes only; client = nothing (blocked from the app).
+Enforced at the API via `requireCapability(cap)` in `src/lib/api.ts` (every
+mutating route) and in the UI via `useCan()` from
+`src/components/providers/SessionProvider.tsx` (the `(dashboard)` layout
+feeds it `ctx.role`; demo mode = admin).
 
 ## Commands
 
@@ -104,9 +116,11 @@ Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
 ## Status
 
 Done: Sprint 1 auth · dashboard UI + data layer · Projects CRUD · Expense
-logging · Invoices + payments.
+logging · Invoices + payments · RLS + role enforcement.
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: RLS policies, then analytics, team/settings, client portal.
+Next: Clients page (only CRUD gap), then analytics / team-settings /
+client portal. Team invites don't exist yet, so every real user is an
+admin until Sprint 6 builds team management.
 
 ### Invoices
 

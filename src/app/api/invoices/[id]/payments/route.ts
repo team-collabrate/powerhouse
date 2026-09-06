@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ok, fail, validationError, requireSession } from "@/lib/api";
+import { ok, fail, validationError, requireCapability} from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { paymentCreateSchema } from "@/lib/validation/invoice";
 import { syncInvoicePaidState } from "@/lib/invoice-sync";
@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/format";
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
-  const auth = await requireSession();
+  const auth = await requireCapability("payment:write");
   if (auth instanceof NextResponse) return auth;
   const { id: invoiceId } = await params;
 

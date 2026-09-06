@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ok, fail, validationError, requireSession } from "@/lib/api";
+import { ok, fail, validationError, requireSession , requireCapability} from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { invoiceUpdateSchema } from "@/lib/validation/invoice";
 import { getInvoice } from "@/lib/queries/invoices";
@@ -17,7 +17,7 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
-  const auth = await requireSession();
+  const auth = await requireCapability("invoice:write");
   if (auth instanceof NextResponse) return auth;
   const { id } = await params;
 
@@ -69,7 +69,7 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const auth = await requireSession();
+  const auth = await requireCapability("invoice:write");
   if (auth instanceof NextResponse) return auth;
   const { id } = await params;
 

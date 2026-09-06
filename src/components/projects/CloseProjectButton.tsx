@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Archive } from "react-feather";
+import { useCan } from "@/components/providers/SessionProvider";
 
 export function CloseProjectButton({
   id,
@@ -14,10 +15,11 @@ export function CloseProjectButton({
   status: string;
 }) {
   const router = useRouter();
+  const canWrite = useCan("project:write");
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  if (status === "closed") return null;
+  if (!canWrite || status === "closed") return null;
 
   async function close() {
     setBusy(true);

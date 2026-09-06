@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Edit2, Send, Slash, Trash2 } from "react-feather";
 import { InvoiceDialog } from "./InvoiceDialog";
 import { PaymentDialog } from "./PaymentDialog";
+import { useCan } from "@/components/providers/SessionProvider";
 import type {
   InvoiceDetail,
   InvoiceProjectOption,
@@ -23,9 +24,13 @@ export function InvoiceActions({
   projects: InvoiceProjectOption[];
 }) {
   const router = useRouter();
+  const canInvoice = useCan("invoice:write");
+  const canPay = useCan("payment:write");
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+
+  if (!canInvoice && !canPay) return null;
 
   async function post(path: string, label: string) {
     setBusy(label);
@@ -49,7 +54,7 @@ export function InvoiceActions({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {status === "draft" && (
+      {canInvoice && status === "draft" && (
         <button
           className={primary}
           disabled={busy !== null}
@@ -60,19 +65,20 @@ export function InvoiceActions({
         </button>
       )}
 
-      {(status === "sent" || status === "partial" || status === "overdue") && (
-        <PaymentDialog
-          invoiceId={invoice.id}
-          balance={invoice.balance}
-          trigger={(open) => (
-            <button className={primary} onClick={open}>
-              Record payment
-            </button>
-          )}
-        />
-      )}
+      {canPay &&
+        (status === "sent" || status === "partial" || status === "overdue") && (
+          <PaymentDialog
+            invoiceId={invoice.id}
+            balance={invoice.balance}
+            trigger={(open) => (
+              <button className={primary} onClick={open}>
+                Record payment
+              </button>
+            )}
+          />
+        )}
 
-      {status !== "cancelled" && (
+      {canInvoice && status !== "cancelled" && (
         <InvoiceDialog
           invoice={invoice}
           projects={projects}
@@ -85,7 +91,7 @@ export function InvoiceActions({
         />
       )}
 
-      {status === "draft" &&
+      {canInvoice && status === "draft" &&
         (confirmingDelete ? (
           <span className="inline-flex items-center gap-2 text-[13px]">
             <span className="text-ink-2">Delete this draft?</span>
@@ -103,7 +109,7 @@ export function InvoiceActions({
           </button>
         ))}
 
-      {(status === "sent" || status === "overdue") &&
+      {canInvoice && (status === "sent" || status === "overdue") &&
         (confirmingCancel ? (
           <span className="inline-flex items-center gap-2 text-[13px]">
             <span className="text-ink-2">Cancel {invoice.invoiceNumber}?</span>

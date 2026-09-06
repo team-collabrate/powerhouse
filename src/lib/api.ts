@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { ZodError } from "zod";
 import { getSessionContext, type SessionContext } from "@/lib/session";
+import { can, type Capability } from "@/lib/permissions";
 
 export function ok<T>(data: T, init?: { status?: number }) {
   return NextResponse.json(
@@ -42,5 +43,25 @@ export function validationError(err: ZodError) {
 export async function requireSession(): Promise<SessionContext | NextResponse> {
   const ctx = await getSessionContext();
   if (!ctx) return fail("UNAUTHORIZED", "Not signed in", 401);
+  return ctx;
+}
+
+/**
+ * Like requireSession, but also 403s if the role lacks the capability.
+ *   const auth = await requireCapability("project:write");
+ *   if (auth instanceof NextResponse) return auth;
+ */
+export async function requireCapability(
+  capability: Capability,
+): Promise<SessionContext | NextResponse> {
+  const ctx = await getSessionContext();
+  if (!ctx) return fail("UNAUTHORIZED", "Not signed in", 401);
+  if (!can(ctx.role, capability)) {
+    return fail(
+      "FORBIDDEN",
+      `Your role (${ctx.role}) can't perform this action`,
+      403,
+    );
+  }
   return ctx;
 }

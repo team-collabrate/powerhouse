@@ -5,6 +5,7 @@ import { Edit2, Plus, Trash2 } from "react-feather";
 import { Card } from "@/components/dashboard/Card";
 import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { ExpenseDialog } from "./ExpenseDialog";
+import { useCan } from "@/components/providers/SessionProvider";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
   EXPENSE_CATEGORY_LABELS,
@@ -33,6 +34,7 @@ export function ProjectExpensesCard({
   expenses: DetailExpense[];
 }) {
   const router = useRouter();
+  const canWrite = useCan("expense:write");
   const total = expenses.reduce((s, e) => s + e.amount, 0);
 
   function toRow(e: DetailExpense): ExpenseRow {
@@ -62,18 +64,20 @@ export function ProjectExpensesCard({
             {formatCurrency(total)}
           </p>
         </div>
-        <ExpenseDialog
-          projectId={projectId}
-          trigger={(open) => (
-            <button
-              onClick={open}
-              className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] border border-hairline-strong bg-surface px-3 text-[12.5px] font-medium text-ink hover:bg-surface-sunken"
-            >
-              <Plus size={14} />
-              Add
-            </button>
-          )}
-        />
+        {canWrite && (
+          <ExpenseDialog
+            projectId={projectId}
+            trigger={(open) => (
+              <button
+                onClick={open}
+                className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] border border-hairline-strong bg-surface px-3 text-[12.5px] font-medium text-ink hover:bg-surface-sunken"
+              >
+                <Plus size={14} />
+                Add
+              </button>
+            )}
+          />
+        )}
       </header>
 
       {expenses.length === 0 ? (
@@ -85,14 +89,15 @@ export function ProjectExpensesCard({
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                {["Description", "Category", "Date", "Amount", ""].map((h) => (
+                {["Description", "Category", "Date", "Amount"].map((h) => (
                   <th
                     key={h}
-                    className="eyebrow px-3 pb-2 pt-1 text-left font-semibold last:w-16"
+                    className="eyebrow px-3 pb-2 pt-1 text-left font-semibold"
                   >
                     {h}
                   </th>
                 ))}
+                {canWrite && <th className="w-16" />}
               </tr>
             </thead>
             <tbody>
@@ -111,31 +116,33 @@ export function ProjectExpensesCard({
                   <td className="tnum px-3 py-2 text-[12.5px] font-medium text-ink">
                     {formatCurrency(e.amount)}
                   </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                      <ExpenseDialog
-                        projectId={projectId}
-                        expense={toRow(e)}
-                        trigger={(open) => (
-                          <button
-                            onClick={open}
-                            aria-label="Edit expense"
-                            className="grid h-7 w-7 place-items-center rounded-md text-ink-3 hover:bg-surface-sunken hover:text-ink-2"
-                          >
-                            <Edit2 size={13} />
-                          </button>
-                        )}
-                      />
-                      <ConfirmButton
-                        label="Delete expense"
-                        question="Delete?"
-                        confirmLabel="Delete"
-                        onConfirm={() => remove(e.id)}
-                      >
-                        <Trash2 size={13} />
-                      </ConfirmButton>
-                    </div>
-                  </td>
+                  {canWrite && (
+                    <td className="px-2 py-1.5">
+                      <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                        <ExpenseDialog
+                          projectId={projectId}
+                          expense={toRow(e)}
+                          trigger={(open) => (
+                            <button
+                              onClick={open}
+                              aria-label="Edit expense"
+                              className="grid h-7 w-7 place-items-center rounded-md text-ink-3 hover:bg-surface-sunken hover:text-ink-2"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                          )}
+                        />
+                        <ConfirmButton
+                          label="Delete expense"
+                          question="Delete?"
+                          confirmLabel="Delete"
+                          onConfirm={() => remove(e.id)}
+                        >
+                          <Trash2 size={13} />
+                        </ConfirmButton>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

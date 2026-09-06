@@ -2,12 +2,15 @@
 
 import { Plus } from "react-feather";
 import { ProjectDialog } from "./ProjectDialog";
+import { useCan } from "@/components/providers/SessionProvider";
 
 export function NewProjectButton({
   variant = "primary",
 }: {
   variant?: "primary" | "secondary";
 }) {
+  const allowed = useCan("project:write");
+  if (!allowed) return null;
   return (
     <ProjectDialog
       trigger={(open) => (
