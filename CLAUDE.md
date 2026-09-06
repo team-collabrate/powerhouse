@@ -103,7 +103,10 @@ Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
 
 ## Status
 
-Done: Sprint 1 auth · dashboard UI + data layer · Projects CRUD.
+Done: Sprint 1 auth · dashboard UI + data layer · Projects CRUD · Expense
+logging (`/expenses` + on the project detail page;
+`POST /api/projects/[id]/expenses`, `PATCH|DELETE /api/expenses/[id]` —
+adding/editing an expense recomputes project profit live).
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: expense logging (feeds profit), then invoices/payments, then RLS
-policies, analytics, team/settings, client portal.
+Next: invoices/payments, then RLS policies, analytics, team/settings,
+client portal.

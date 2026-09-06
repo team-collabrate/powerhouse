@@ -144,6 +144,7 @@ export interface ProjectDetail {
     amount: number;
     description: string;
     dateIncurred: string;
+    receiptUrl: string | null;
   }[];
   milestones: {
     id: string;
@@ -189,6 +190,7 @@ export async function getProject(
           amount: true,
           description: true,
           dateIncurred: true,
+          receiptUrl: true,
         },
       },
       milestones: {
@@ -215,6 +217,7 @@ export async function getProject(
     amount: num(e.amount),
     description: e.description,
     dateIncurred: e.dateIncurred.toISOString(),
+    receiptUrl: e.receiptUrl,
   }));
 
   const profit = calculateProjectProfit({

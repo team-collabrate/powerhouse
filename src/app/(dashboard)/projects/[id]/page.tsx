@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ProjectStatusBadge } from "@/components/projects/ProjectStatusBadge";
 import { EditProjectButton } from "@/components/projects/EditProjectButton";
 import { CloseProjectButton } from "@/components/projects/CloseProjectButton";
+import { ProjectExpensesCard } from "@/components/expenses/ProjectExpensesCard";
 import type { InvoiceStatus } from "@/lib/dashboard-types";
 
 export const dynamic = "force-dynamic";
@@ -103,24 +104,12 @@ export default async function ProjectDetailPage({
       </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Expenses */}
-        <Card>
-          <CardHeader
-            title="Expenses"
-            subtitle={`${p.expenses.length} items · ${formatCurrency(c.expenses)}`}
-            menu={false}
-          />
-          <MiniTable
-            head={["Description", "Category", "Date", "Amount"]}
-            rows={p.expenses.slice(0, 8).map((e) => [
-              e.description,
-              e.category,
-              formatDate(e.dateIncurred),
-              formatCurrency(e.amount),
-            ])}
-            empty="No expenses recorded."
-          />
-        </Card>
+        <ProjectExpensesCard
+          projectId={p.id}
+          projectName={p.name}
+          clientName={p.clientName}
+          expenses={p.expenses}
+        />
 
         {/* Milestones */}
         <Card>
@@ -210,49 +199,6 @@ function Figure({
         {value}
       </p>
       {sub && <p className="mt-0.5 text-[11px] text-ink-3">{sub}</p>}
-    </div>
-  );
-}
-
-function MiniTable({
-  head,
-  rows,
-  empty,
-}: {
-  head: string[];
-  rows: string[][];
-  empty: string;
-}) {
-  if (rows.length === 0) return <Empty text={empty} />;
-  return (
-    <div className="overflow-x-auto px-2 pb-3">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            {head.map((h) => (
-              <th key={h} className="eyebrow px-3 pb-2 pt-1 text-left font-semibold">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i} className="border-t border-hairline">
-              {r.map((cell, j) => (
-                <td
-                  key={j}
-                  className={`px-3 py-2 text-[12.5px] ${
-                    j === 0 ? "text-ink" : "tnum text-ink-2"
-                  }`}
-                >
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }
