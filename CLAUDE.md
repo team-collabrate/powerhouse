@@ -116,11 +116,12 @@ Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
 ## Status
 
 Done: Sprint 1 auth · dashboard UI + data layer · Projects CRUD · Expense
-logging · Invoices + payments · RLS + role enforcement.
+logging · Invoices + payments · RLS + role enforcement · Clients CRUD
+(`/clients` + `/clients/[id]` with financial rollups; `GET/POST /api/clients`,
+`GET/PATCH/DELETE /api/clients/[id]`; DELETE is a soft deactivate).
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: Clients page (only CRUD gap), then analytics / team-settings /
-client portal. Team invites don't exist yet, so every real user is an
-admin until Sprint 6 builds team management.
+Next: analytics / team-settings / client portal. Team invites don't exist
+yet, so every real user is an admin until Sprint 6 builds team management.
 
 ### Invoices
 

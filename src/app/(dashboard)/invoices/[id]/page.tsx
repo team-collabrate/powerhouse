@@ -44,7 +44,13 @@ export default async function InvoiceDetailPage({
             <StatusBadge status={invoice.status} />
           </div>
           <p className="mt-1 text-[13px] text-ink-3">
-            {invoice.clientName} ·{" "}
+            <Link
+              href={`/clients/${invoice.clientId}`}
+              className="hover:text-ink-2"
+            >
+              {invoice.clientName}
+            </Link>{" "}
+            ·{" "}
             <Link
               href={`/projects/${invoice.projectId}`}
               className="hover:text-ink-2"

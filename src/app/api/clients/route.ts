@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ok, validationError, requireSession , requireCapability} from "@/lib/api";
+import { ok, validationError, requireSession, requireCapability } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
+import { clientCreateSchema } from "@/lib/validation/client";
 
 export async function GET() {
   const auth = await requireSession();
@@ -22,22 +22,26 @@ export async function GET() {
   );
 }
 
-const createSchema = z.object({
-  companyName: z.string().trim().min(1, "Required").max(255),
-  name: z.string().trim().min(1, "Required").max(255),
-  email: z.string().trim().email().max(255),
-});
-
 export async function POST(request: Request) {
   const auth = await requireCapability("client:write");
   if (auth instanceof NextResponse) return auth;
 
   const body = await request.json().catch(() => null);
-  const parsed = createSchema.safeParse(body);
+  const parsed = clientCreateSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
+  const d = parsed.data;
 
   const client = await prisma.client.create({
-    data: { agencyId: auth.agencyId, ...parsed.data },
+    data: {
+      agencyId: auth.agencyId,
+      companyName: d.companyName,
+      name: d.name,
+      email: d.email,
+      phone: d.phone || null,
+      address: d.address || null,
+      city: d.city || null,
+      country: d.country || null,
+    },
     select: { id: true, name: true, companyName: true },
   });
 

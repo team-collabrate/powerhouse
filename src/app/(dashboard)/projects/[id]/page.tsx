@@ -47,7 +47,13 @@ export default async function ProjectDetailPage({
             <ProjectStatusBadge status={p.status} />
           </div>
           <p className="mt-1 text-[13px] text-ink-3">
-            {p.clientName} · {SERVICE_TYPE_LABELS[p.serviceType]}
+            <Link
+              href={`/clients/${p.clientId}`}
+              className="hover:text-ink-2"
+            >
+              {p.clientName}
+            </Link>{" "}
+            · {SERVICE_TYPE_LABELS[p.serviceType]}
             {p.deadline && ` · Due ${formatDate(p.deadline)}`}
           </p>
         </div>
