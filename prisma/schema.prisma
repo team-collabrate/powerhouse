@@ -95,6 +95,7 @@ model Project {
   name               String
   description        String?
   status             String    @default("active") // active, in_review, delivered, closed
+  serviceType        String    @default("other") // web_dev, design, marketing, consulting, other
   contractValue      Decimal   @map("contract_value")
   startDate          DateTime? @map("start_date")
   deadline           DateTime?

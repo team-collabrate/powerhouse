@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { PROFIT_SERIES } from "@/lib/demo-data";
+import type { ProfitSeriesView } from "@/lib/dashboard-types";
 
 const W = 720;
 const H = 240;
@@ -9,42 +9,38 @@ const PAD = { top: 16, right: 12, bottom: 28, left: 44 };
 const PLOT_W = W - PAD.left - PAD.right;
 const PLOT_H = H - PAD.top - PAD.bottom;
 
-const { revenue, cost, profit, yMax, ticks, days } = {
-  ...PROFIT_SERIES,
-  profit: PROFIT_SERIES.profit,
-};
-
-function x(i: number, n: number) {
-  return PAD.left + (i / (n - 1)) * PLOT_W;
-}
-function y(v: number) {
-  return PAD.top + PLOT_H - (v / yMax) * PLOT_H;
-}
-function path(data: number[]) {
-  return data.map((v, i) => `${i === 0 ? "M" : "L"}${x(i, data.length)},${y(v)}`).join(" ");
-}
-
-const gridValues = [0, 2000, 4000, 6000];
-
-export function ProfitAreaChart() {
+export function ProfitAreaChart({ series }: { series: ProfitSeriesView }) {
+  const { points, yMax, tickIndices } = series;
+  const n = points.length;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
-  const n = revenue.length;
 
-  const areaPath = useMemo(
-    () => `${path(profit)} L${x(n - 1, n)},${y(0)} L${x(0, n)},${y(0)} Z`,
-    [n],
-  );
+  const revenue = points.map((p) => p.revenue);
+  const cost = points.map((p) => p.cost);
+  const profit = points.map((p) => p.profit);
+
+  const x = (i: number) => PAD.left + (n <= 1 ? 0 : (i / (n - 1)) * PLOT_W);
+  const y = (v: number) =>
+    PAD.top + PLOT_H - (Math.max(0, v) / yMax) * PLOT_H;
+  const line = (data: number[]) =>
+    data.map((v, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(v)}`).join(" ");
+
+  const gridValues = useMemo(() => {
+    const step = yMax / 3;
+    return [0, step, step * 2, yMax];
+  }, [yMax]);
+
+  const areaPath = `${line(profit)} L${x(n - 1)},${y(0)} L${x(0)},${y(0)} Z`;
 
   function onMove(e: React.PointerEvent) {
     const rect = wrapRef.current!.getBoundingClientRect();
     const ratio = (e.clientX - rect.left) / rect.width;
-    const svgX = ratio * W;
-    const idx = Math.round(((svgX - PAD.left) / PLOT_W) * (n - 1));
+    const idx = Math.round(((ratio * W - PAD.left) / PLOT_W) * (n - 1));
     setHover(Math.max(0, Math.min(n - 1, idx)));
   }
 
-  const hx = hover !== null ? (x(hover, n) / W) * 100 : 0;
+  const kfmt = (v: number) =>
+    v === 0 ? "0" : v >= 1000 ? `${Math.round(v / 100) / 10}k` : String(Math.round(v));
 
   return (
     <div className="px-5 pb-5 pt-4">
@@ -88,15 +84,14 @@ export function ProfitAreaChart() {
                 fontSize={10}
                 fill="var(--ink-3)"
               >
-                {v === 0 ? "0" : `${v / 1000}k`}
+                {kfmt(v)}
               </text>
             </g>
           ))}
 
           <path d={areaPath} fill="url(#profitFill)" />
-
           <path
-            d={path(cost)}
+            d={line(cost)}
             fill="none"
             stroke="var(--ink-3)"
             strokeWidth={1.5}
@@ -104,14 +99,14 @@ export function ProfitAreaChart() {
             vectorEffect="non-scaling-stroke"
           />
           <path
-            d={path(revenue)}
+            d={line(revenue)}
             fill="none"
             stroke="var(--ink-2)"
             strokeWidth={1.5}
             vectorEffect="non-scaling-stroke"
           />
           <path
-            d={path(profit)}
+            d={line(profit)}
             fill="none"
             stroke="var(--accent)"
             strokeWidth={2}
@@ -119,24 +114,26 @@ export function ProfitAreaChart() {
             vectorEffect="non-scaling-stroke"
           />
 
-          {ticks.map((t, i) => (
-            <text
-              key={t}
-              x={PAD.left + (i / (ticks.length - 1)) * PLOT_W}
-              y={H - 8}
-              textAnchor={i === 0 ? "start" : i === ticks.length - 1 ? "end" : "middle"}
-              fontSize={10}
-              fill="var(--ink-3)"
-            >
-              {t}
-            </text>
-          ))}
+          {tickIndices
+            .filter((i) => i < n)
+            .map((i) => (
+              <text
+                key={i}
+                x={x(i)}
+                y={H - 8}
+                textAnchor={i === 0 ? "start" : i >= n - 1 ? "end" : "middle"}
+                fontSize={10}
+                fill="var(--ink-3)"
+              >
+                {points[i].label}
+              </text>
+            ))}
 
           {hover !== null && (
             <g>
               <line
-                x1={x(hover, n)}
-                x2={x(hover, n)}
+                x1={x(hover)}
+                x2={x(hover)}
                 y1={PAD.top}
                 y2={PAD.top + PLOT_H}
                 stroke="var(--hairline-strong)"
@@ -150,7 +147,7 @@ export function ProfitAreaChart() {
               ].map((d, i) => (
                 <circle
                   key={i}
-                  cx={x(hover, n)}
+                  cx={x(hover)}
                   cy={y(d.v)}
                   r={3.5}
                   fill="var(--surface)"
@@ -166,13 +163,20 @@ export function ProfitAreaChart() {
         {hover !== null && (
           <div
             className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-[var(--radius-sm)] border border-hairline bg-surface px-3 py-2 shadow-[var(--shadow-pop)]"
-            style={{ left: `${hx}%` }}
+            style={{ left: `${(x(hover) / W) * 100}%` }}
           >
-            <p className="text-[11px] font-medium text-ink-3">{days[hover]}</p>
+            <p className="text-[11px] font-medium text-ink-3">
+              {points[hover].label}
+            </p>
             <dl className="mt-1 space-y-0.5">
               <Row label="Revenue" value={revenue[hover]} color="var(--ink-2)" />
               <Row label="Cost" value={cost[hover]} color="var(--ink-3)" />
-              <Row label="Profit" value={profit[hover]} color="var(--accent)" strong />
+              <Row
+                label="Profit"
+                value={profit[hover]}
+                color="var(--accent)"
+                strong
+              />
             </dl>
           </div>
         )}
@@ -195,10 +199,7 @@ function Row({
   return (
     <div className="flex items-center gap-3 text-[12px]">
       <span className="flex items-center gap-1.5 text-ink-3">
-        <span
-          className="h-1.5 w-1.5 rounded-full"
-          style={{ background: color }}
-        />
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
         {label}
       </span>
       <span

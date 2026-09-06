@@ -18,13 +18,13 @@ const ICONS = {
 export interface KpiCardProps {
   label: string;
   value: string;
-  delta: { value: string; direction: "up" | "down" };
+  delta?: { value: string; direction: "up" | "down" };
   icon: keyof typeof ICONS;
 }
 
 export function KpiCard({ label, value, delta, icon }: KpiCardProps) {
   const Icon = ICONS[icon];
-  const up = delta.direction === "up";
+  const up = delta?.direction === "up";
 
   return (
     <div className="rounded-[var(--radius-md)] border border-hairline bg-surface-raised p-4 shadow-[var(--shadow-card)] transition-colors hover:border-hairline-strong">
@@ -46,14 +46,16 @@ export function KpiCard({ label, value, delta, icon }: KpiCardProps) {
         <span className="tnum text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink">
           {value}
         </span>
-        <span
-          className={`tnum inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${
-            up ? "bg-profit-soft text-profit" : "bg-loss-soft text-loss"
-          }`}
-        >
-          {up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-          {delta.value}
-        </span>
+        {delta && (
+          <span
+            className={`tnum inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${
+              up ? "bg-profit-soft text-profit" : "bg-loss-soft text-loss"
+            }`}
+          >
+            {up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+            {delta.value}
+          </span>
+        )}
       </div>
     </div>
   );

@@ -1,13 +1,13 @@
 import { AlertTriangle, ArrowRight, FileText } from "react-feather";
-import { INSIGHTS } from "@/lib/demo-data";
+import type { InsightView } from "@/lib/dashboard-types";
 
 const ICONS = { "alert-triangle": AlertTriangle, "file-text": FileText } as const;
 
-export function InsightsCard() {
+export function InsightsCard({ items }: { items: InsightView[] }) {
   return (
     <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
       <ul className="flex-1 space-y-4">
-        {INSIGHTS.map((it) => {
+        {items.map((it) => {
           const Icon = ICONS[it.icon];
           return (
             <li key={it.title} className="flex gap-3">

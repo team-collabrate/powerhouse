@@ -1,8 +1,16 @@
 import { MoreHorizontal } from "react-feather";
-import { RECENT_INVOICES } from "@/lib/demo-data";
+import type { InvoiceRowView } from "@/lib/dashboard-types";
 import { StatusBadge } from "./StatusBadge";
 
-export function RecentInvoices() {
+export function RecentInvoices({ rows }: { rows: InvoiceRowView[] }) {
+  if (rows.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center px-5 pb-8 pt-6 text-[13px] text-ink-3">
+        No invoices yet.
+      </div>
+    );
+  }
+
   return (
     <div className="px-2 pb-3 pt-2">
       <table className="w-full border-collapse">
@@ -19,7 +27,7 @@ export function RecentInvoices() {
           </tr>
         </thead>
         <tbody>
-          {RECENT_INVOICES.map((inv) => (
+          {rows.map((inv) => (
             <tr
               key={inv.number}
               className="border-t border-hairline transition-colors hover:bg-surface-sunken/60"

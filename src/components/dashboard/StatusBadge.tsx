@@ -1,4 +1,4 @@
-import type { InvoiceStatus } from "@/lib/demo-data";
+import type { InvoiceStatus } from "@/lib/dashboard-types";
 
 const MAP: Record<InvoiceStatus, { label: string; className: string }> = {
   paid: { label: "Paid", className: "bg-profit-soft text-profit" },

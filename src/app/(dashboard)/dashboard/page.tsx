@@ -1,5 +1,8 @@
 import { Plus } from "react-feather";
-import { KPIS } from "@/lib/demo-data";
+import { getSessionContext } from "@/lib/session";
+import { getDashboardData } from "@/lib/queries/dashboard";
+import { DEMO_DASHBOARD } from "@/lib/demo-data";
+import type { DashboardView } from "@/lib/dashboard-types";
 import { Card, CardHeader } from "@/components/dashboard/Card";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ProfitAreaChart } from "@/components/dashboard/ProfitAreaChart";
@@ -9,6 +12,8 @@ import { ClientGrowthBars } from "@/components/dashboard/ClientGrowthBars";
 import { RecentInvoices } from "@/components/dashboard/RecentInvoices";
 import { InsightsCard } from "@/components/dashboard/InsightsCard";
 
+export const dynamic = "force-dynamic";
+
 function ViewAll() {
   return (
     <button className="text-[12px] font-medium text-accent-strong hover:underline">
@@ -17,15 +22,36 @@ function ViewAll() {
   );
 }
 
-export default function DashboardPage() {
+async function loadView(): Promise<DashboardView> {
+  const ctx = await getSessionContext();
+  if (!ctx) return DEMO_DASHBOARD;
+  try {
+    const name = ctx.fullName.trim().split(/\s+/)[0] || "there";
+    return await getDashboardData(ctx.agencyId, name);
+  } catch (err) {
+    console.error("dashboard query failed, falling back to demo data", err);
+    return DEMO_DASHBOARD;
+  }
+}
+
+export default async function DashboardPage() {
+  const view = await loadView();
+
   return (
     <div className="space-y-5">
       {/* Welcome */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-ink">
-            Welcome back, Bella
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-ink">
+              Welcome back, {view.greetingName}
+            </h2>
+            {view.isDemo && (
+              <span className="rounded-md bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-3">
+                Sample data
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-[13px] text-ink-3">
             Here&apos;s how the studio is tracking this month.
           </p>
@@ -43,7 +69,7 @@ export default function DashboardPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {KPIS.map(({ id, ...k }) => (
+        {view.kpis.map(({ id, ...k }) => (
           <KpiCard key={id} {...k} />
         ))}
       </div>
@@ -52,11 +78,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <Card className="lg:col-span-5">
           <CardHeader title="Profit Performance" subtitle="Last 30 days" />
-          <ProfitAreaChart />
+          <ProfitAreaChart series={view.profit} />
         </Card>
         <Card className="lg:col-span-4">
           <CardHeader title="Revenue by Service" subtitle="This quarter" />
-          <ServiceDonut />
+          <ServiceDonut slices={view.services} />
         </Card>
         <Card className="lg:col-span-3">
           <CardHeader
@@ -65,27 +91,23 @@ export default function DashboardPage() {
             action={<ViewAll />}
             menu={false}
           />
-          <TopProjects />
+          <TopProjects items={view.topProjects} />
         </Card>
       </div>
 
       {/* Row 3 */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <Card className="lg:col-span-3">
-          <CardHeader title="Client Growth" subtitle="Apr – Sep" />
-          <ClientGrowthBars />
+          <CardHeader title="Client Growth" subtitle="Last 6 months" />
+          <ClientGrowthBars data={view.clientGrowth} />
         </Card>
         <Card className="lg:col-span-6">
-          <CardHeader
-            title="Recent Invoices"
-            action={<ViewAll />}
-            menu={false}
-          />
-          <RecentInvoices />
+          <CardHeader title="Recent Invoices" action={<ViewAll />} menu={false} />
+          <RecentInvoices rows={view.recentInvoices} />
         </Card>
         <Card className="lg:col-span-3">
           <CardHeader title="Insights" subtitle="Needs attention" menu={false} />
-          <InsightsCard />
+          <InsightsCard items={view.insights} />
         </Card>
       </div>
     </div>

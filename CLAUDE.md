@@ -44,19 +44,41 @@ npm run db:migrate   # prisma migrate dev (needs DATABASE_URL + DIRECT_URL)
 npm run db:studio
 ```
 
-## Dashboard UI
+## Dashboard
 
-`/dashboard` is a high-fidelity **static** build (FlowMail-style reference).
-Charts are hand-built inline SVG in `src/components/dashboard/` — no chart
-library. All figures come from `src/lib/demo-data.ts`. Sprint 3 replaces the
-demo data with real queries; keep the component API, swap the data source.
+`/dashboard` is a server component. Data flow:
+`getSessionContext()` → `getDashboardData(agencyId, name)` in
+`src/lib/queries/dashboard.ts`. That fetches agency-scoped rows via Prisma,
+adapts them to `DashInputs`, and calls the **pure** `buildDashboardView()`
+(all the aggregation math — bucketing, margins, %, deltas, insight rules).
+
+If Supabase/DB isn't configured, nobody's signed in, or a query throws, the
+page falls back to `DEMO_DASHBOARD` (`src/lib/demo-data.ts`) and shows a
+"Sample data" chip. Same `DashboardView` shape either way.
+
+Charts are hand-built inline SVG in `src/components/dashboard/` (no chart
+lib); every component takes a typed slice of `DashboardView` as props.
+
+`npm run test` runs `scripts/check-dashboard.ts` — 20 assertions against
+`buildDashboardView` with synthetic rows, no DB needed.
 
 Aesthetic rules: purple accent only on primary action / active nav / primary
 chart series; green only on positive deltas & paid state; hairline borders,
 minimal shadow, `.tnum` on every number.
 
+## Going live with real data
+
+```
+# 1. create a Supabase project, fill .env.local (see .env.example)
+npm run db:migrate        # creates tables (needs DIRECT_URL)
+# 2. sign up in the app  -> provisions your agency + admin user
+SEED_EMAIL=you@example.com npm run db:seed   # fills that agency with demo rows
+```
+Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
+that no auth user is attached to (useful for `prisma studio` inspection only).
+
 ## Status
 
-Sprint 1 (Foundation & Auth) scaffolded + dashboard UI built. Not yet done:
-real Supabase project, migrations run, RLS policies, wiring demo data to the
-DB, projects/invoices/clients CRUD (Sprint 3+).
+Sprint 1 (auth) + dashboard UI + dashboard data layer done. Not yet done:
+run migrations against a real Supabase project, RLS policies, and
+projects/invoices/clients CRUD pages (Sprint 3+).

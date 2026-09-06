@@ -1,17 +1,18 @@
-import { CLIENT_GROWTH } from "@/lib/demo-data";
+import type { ClientGrowthView } from "@/lib/dashboard-types";
 
-export function ClientGrowthBars() {
-  const { bars, yMax } = CLIENT_GROWTH;
+export function ClientGrowthBars({ data }: { data: ClientGrowthView }) {
+  const { bars, yMax, netNew, caption } = data;
 
   return (
     <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
       <div className="flex items-baseline gap-2">
-        <span className="tnum text-[22px] font-semibold text-ink">+10</span>
+        <span className="tnum text-[22px] font-semibold text-ink">
+          {netNew >= 0 ? "+" : ""}
+          {netNew}
+        </span>
         <span className="text-[12px] text-profit">clients this half</span>
       </div>
-      <p className="mt-1 text-[12px] text-ink-3">
-        Net new clients per month, April to September.
-      </p>
+      <p className="mt-1 text-[12px] text-ink-3">{caption}</p>
 
       <div className="mt-4 flex flex-1 items-end gap-3">
         {bars.map((b) => (
@@ -28,7 +29,7 @@ export function ClientGrowthBars() {
               <div
                 className="w-full max-w-[26px] rounded-[5px]"
                 style={{
-                  height: `${(b.value / yMax) * 100}%`,
+                  height: `${Math.max(3, (b.value / yMax) * 100)}%`,
                   background: b.highlight
                     ? "var(--accent)"
                     : "var(--surface-sunken)",
