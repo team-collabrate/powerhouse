@@ -1,0 +1,267 @@
+// Agency Revenue & Project Control Dashboard
+// Schema derived from docs/database/DATA_MODEL.md (Prisma section).
+// Profit / cost / lifetime-value figures are NOT stored columns — Postgres
+// generated columns cannot run cross-table subqueries. They are computed in
+// the API layer (see src/lib/profit.ts) or via SQL views.
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Agency {
+  id                   String   @id @default(cuid())
+  name                 String
+  logoUrl              String?  @map("logo_url")
+  brandColor           String   @default("#5cd65c") @map("brand_color")
+  monthlyRevenueTarget Decimal  @default(0) @map("monthly_revenue_target")
+  subdomain            String?  @unique
+  isActive             Boolean  @default(true) @map("is_active")
+
+  users           User[]
+  clients         Client[]
+  projects        Project[]
+  invoices        Invoice[]
+  companyExpenses CompanyExpense[]
+  activityLogs    ActivityLog[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("agencies")
+}
+
+model User {
+  id               String  @id @default(cuid())
+  email            String  @unique
+  fullName         String  @map("full_name")
+  role             String  @default("team_member") // admin, manager, team_member, client
+  agencyId         String  @map("agency_id")
+  agency           Agency  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  internalCostRate Decimal @default(0) @map("internal_cost_rate")
+  avatarUrl        String? @map("avatar_url")
+  isActive         Boolean @default(true) @map("is_active")
+
+  projectHours     ProjectHours[]
+  projectExpenses  ProjectExpense[]
+  createdInvoices  Invoice[]
+  recordedPayments Payment[]
+  createdExpenses  CompanyExpense[]
+  activityLogs     ActivityLog[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([agencyId])
+  @@map("users")
+}
+
+model Client {
+  id          String  @id @default(cuid())
+  agencyId    String  @map("agency_id")
+  agency      Agency  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  name        String
+  companyName String? @map("company_name")
+  email       String
+  phone       String?
+  address     String?
+  city        String?
+  state       String?
+  country     String?
+  zipCode     String? @map("zip_code")
+  isActive    Boolean @default(true) @map("is_active")
+
+  projects Project[]
+  invoices Invoice[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([agencyId])
+  @@map("clients")
+}
+
+model Project {
+  id                 String    @id @default(cuid())
+  agencyId           String    @map("agency_id")
+  agency             Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId           String    @map("client_id")
+  client             Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name               String
+  description        String?
+  status             String    @default("active") // active, in_review, delivered, closed
+  contractValue      Decimal   @map("contract_value")
+  startDate          DateTime? @map("start_date")
+  deadline           DateTime?
+  progressPercentage Int       @default(0) @map("progress_percentage")
+  allocatedOverhead  Decimal   @default(0) @map("allocated_overhead")
+
+  projectHours    ProjectHours[]
+  projectExpenses ProjectExpense[]
+  milestones      Milestone[]
+  invoices        Invoice[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([agencyId])
+  @@index([clientId])
+  @@index([status])
+  @@map("projects")
+}
+
+model ProjectHours {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hoursLogged Decimal  @map("hours_logged")
+  dateLogged  DateTime @map("date_logged")
+  description String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([dateLogged])
+  @@map("project_hours")
+}
+
+model ProjectExpense {
+  id           String   @id @default(cuid())
+  projectId    String   @map("project_id")
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category     String // freelance, software, design, hosting, travel, materials, other
+  amount       Decimal
+  description  String
+  dateIncurred DateTime @map("date_incurred")
+  receiptUrl   String?  @map("receipt_url")
+  createdBy    String   @map("created_by")
+  user         User     @relation(fields: [createdBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([projectId])
+  @@index([category])
+  @@map("project_expenses")
+}
+
+model Milestone {
+  id            String    @id @default(cuid())
+  projectId     String    @map("project_id")
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  dueDate       DateTime  @map("due_date")
+  status        String    @default("pending") // pending, in_progress, completed
+  completedDate DateTime? @map("completed_date")
+  deliverables  String? // JSON array
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([projectId])
+  @@map("milestones")
+}
+
+model Invoice {
+  id            String    @id @default(cuid())
+  agencyId      String    @map("agency_id")
+  agency        Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId      String    @map("client_id")
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  projectId     String    @map("project_id")
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  invoiceNumber String    @unique @map("invoice_number")
+  amount        Decimal
+  status        String    @default("draft") // draft, sent, viewed, paid, overdue, cancelled
+  issueDate     DateTime? @map("issue_date")
+  dueDate       DateTime  @map("due_date")
+  sentDate      DateTime? @map("sent_date")
+  viewedDate    DateTime? @map("viewed_date")
+  paidDate      DateTime? @map("paid_date")
+  paymentAmount Decimal?  @map("payment_amount")
+  paymentMethod String?   @map("payment_method")
+  notes         String?
+  milestoneIds  String[]  @map("milestone_ids")
+  createdBy     String    @map("created_by")
+  user          User      @relation(fields: [createdBy], references: [id])
+
+  payments Payment[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([agencyId])
+  @@index([clientId])
+  @@index([projectId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  invoiceId       String   @map("invoice_id")
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount          Decimal
+  paymentDate     DateTime @map("payment_date")
+  paymentMethod   String   @map("payment_method")
+  referenceNumber String?  @map("reference_number")
+  notes           String?
+  recordedBy      String   @map("recorded_by")
+  user            User     @relation(fields: [recordedBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+model CompanyExpense {
+  id                 String   @id @default(cuid())
+  agencyId           String   @map("agency_id")
+  agency             Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  category           String // rent, utilities, salary, software, insurance, other
+  description        String
+  amount             Decimal
+  dateIncurred       DateTime @map("date_incurred")
+  isRecurring        Boolean  @default(false) @map("is_recurring")
+  recurringFrequency String?  @map("recurring_frequency")
+  createdBy          String   @map("created_by")
+  user               User     @relation(fields: [createdBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([agencyId])
+  @@map("company_expenses")
+}
+
+model ActivityLog {
+  id         String  @id @default(cuid())
+  agencyId   String  @map("agency_id")
+  agency     Agency  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  userId     String? @map("user_id")
+  user       User?   @relation(fields: [userId], references: [id])
+  action     String
+  entityType String? @map("entity_type")
+  entityId   String? @map("entity_id")
+  description String?
+  metadata   Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([agencyId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_log")
+}
