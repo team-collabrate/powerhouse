@@ -19,11 +19,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       # postinstall runs `prisma generate`; no DB connection needed for it
       - run: npm ci
+
+      # generate Next's route types so tsc sees LayoutProps/PageProps
+      - run: npx next typegen
 
       - name: Typecheck
         run: npm run typecheck

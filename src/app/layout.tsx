@@ -13,7 +13,11 @@ export const metadata: Metadata = {
   description: "Real-time project profitability for contract-based agencies",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
       <body className="min-h-full">
