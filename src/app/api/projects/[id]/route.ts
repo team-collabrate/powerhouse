@@ -54,6 +54,7 @@ export async function PATCH(request: Request, { params }: Params) {
       ...(input.contractValue !== undefined && {
         contractValue: input.contractValue,
       }),
+      ...(input.teamCost !== undefined && { teamCost: input.teamCost }),
       ...(input.allocatedOverhead !== undefined && {
         allocatedOverhead: input.allocatedOverhead,
       }),

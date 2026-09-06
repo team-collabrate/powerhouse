@@ -24,9 +24,15 @@ Full blueprint lives in `docs/` (start with `docs/README.md`).
 
 ## Profit calculation
 
+No time tracking — projects are contract + duration based. Team/labour cost is
+a single estimated `teamCost` field on the project (manager-entered).
+
 Never a stored DB column (Postgres generated columns can't do cross-table
 subqueries). Single source of truth: `src/lib/profit.ts`.
-`profit = contract_value - (team_cost + expenses + allocated_overhead)`
+`profit = contract_value - (team_cost + Σ project_expenses + allocated_overhead)`
+
+The dashboard profit chart amortises each active project's `teamCost` linearly
+across its start→deadline span (fallback 90 days) to get a daily cost figure.
 
 ## Multi-tenancy
 
@@ -98,5 +104,6 @@ Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
 ## Status
 
 Done: Sprint 1 auth · dashboard UI + data layer · Projects CRUD.
-Next: time-tracking + expense logging (feeds profit), then invoices/payments,
-then RLS policies, analytics, team/settings, client portal.
+Time tracking is intentionally OUT (see Profit calculation above).
+Next: expense logging (feeds profit), then invoices/payments, then RLS
+policies, analytics, team/settings, client portal.

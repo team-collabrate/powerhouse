@@ -25,7 +25,6 @@ const monthStart = (back: number) => {
   return new Date(n.getFullYear(), n.getMonth() - back, 8, 12);
 };
 const D = (v: number) => new Prisma.Decimal(Math.round(v * 100) / 100);
-const isWeekday = (d: Date) => d.getDay() !== 0 && d.getDay() !== 6;
 
 async function resolveAgency() {
   const email = process.env.SEED_EMAIL;
@@ -65,7 +64,6 @@ async function main() {
 
   await prisma.payment.deleteMany({ where: { invoice: { agencyId } } });
   await prisma.invoice.deleteMany({ where: { agencyId } });
-  await prisma.projectHours.deleteMany({ where: { project: { agencyId } } });
   await prisma.projectExpense.deleteMany({ where: { project: { agencyId } } });
   await prisma.milestone.deleteMany({ where: { project: { agencyId } } });
   await prisma.project.deleteMany({ where: { agencyId } });
@@ -80,34 +78,19 @@ async function main() {
   });
 
   // ---- team ----
-  await prisma.user.update({
-    where: { id: primaryUserId },
-    data: { internalCostRate: D(150) },
-  });
-  const team = await Promise.all(
-    (
-      [
-        ["Priya Anand", 95],
-        ["Marcus Lee", 120],
-        ["Tomás Rivera", 80],
-        ["Dana Whitfield", 135],
-      ] as const
-    ).map(([fullName, rate], i) =>
-      prisma.user.create({
-        data: {
-          email: `member${i + 1}.${agencyId.slice(-6)}@meridian.demo`,
-          fullName,
-          role: "team_member",
-          agencyId,
-          internalCostRate: D(rate),
-        },
-      }),
+  await Promise.all(
+    ["Priya Anand", "Marcus Lee", "Tomás Rivera", "Dana Whitfield"].map(
+      (fullName, i) =>
+        prisma.user.create({
+          data: {
+            email: `member${i + 1}.${agencyId.slice(-6)}@meridian.demo`,
+            fullName,
+            role: "team_member",
+            agencyId,
+          },
+        }),
     ),
   );
-  const staff = [
-    { id: primaryUserId, rate: 150 },
-    ...team.map((t) => ({ id: t.id, rate: Number(t.internalCostRate) })),
-  ];
 
   // ---- clients (weighted toward recent months) ----
   const clientSpecs = [
@@ -147,18 +130,18 @@ async function main() {
   const cid = (name: string) =>
     clients[clientSpecs.findIndex((c) => c[0] === name)].id;
 
-  // ---- projects: `labor` is the total $ of internal time to log over the
-  // window, tuned so each project lands on a sensible margin. Acre is
-  // deliberately under 15% so the "under margin" insight fires. ----
+  // ---- projects: `teamCost` is the estimated internal labour cost, tuned so
+  // each project lands on a sensible margin. Acre is deliberately under 15%
+  // so the "under margin" insight fires. `since` = project age in days. ----
   const P = [
-    { name: "Northwind Rebrand", client: "Northwind Traders", service: "design", status: "active", value: 84_000, overhead: 4_000, since: 34, labor: 30_000, people: 2, progress: 62 },
-    { name: "Helio App Launch", client: "Helio Labs", service: "web_dev", status: "active", value: 145_000, overhead: 7_000, since: 34, labor: 44_000, people: 3, progress: 48 },
-    { name: "Acre Storefront", client: "Acre & Co.", service: "web_dev", status: "active", value: 32_000, overhead: 2_500, since: 34, labor: 17_000, people: 2, progress: 70, bigExpense: 7_000 },
-    { name: "Vector Site Refresh", client: "Vector Studio", service: "web_dev", status: "active", value: 41_000, overhead: 2_000, since: 30, labor: 15_000, people: 1, progress: 55 },
-    { name: "Meridian Campaign", client: "Meridian Group", service: "marketing", status: "active", value: 52_000, overhead: 2_500, since: 28, labor: 20_000, people: 2, progress: 44 },
-    { name: "Brightpath Advisory", client: "Brightpath", service: "consulting", status: "active", value: 33_000, overhead: 1_500, since: 24, labor: 13_000, people: 1, progress: 38 },
-    { name: "Lumen Storefront", client: "Lumen Retail", service: "web_dev", status: "active", value: 60_000, overhead: 3_000, since: 12, labor: 16_000, people: 2, progress: 22 },
-    { name: "Cobalt Brand System", client: "Cobalt Health", service: "design", status: "delivered", value: 64_000, overhead: 3_000, since: 0, labor: 0, people: 0, progress: 100 },
+    { name: "Northwind Rebrand", client: "Northwind Traders", service: "design", status: "active", value: 84_000, overhead: 4_000, since: 74, teamCost: 30_000, progress: 62 },
+    { name: "Helio App Launch", client: "Helio Labs", service: "web_dev", status: "active", value: 145_000, overhead: 7_000, since: 74, teamCost: 47_000, progress: 48 },
+    { name: "Acre Storefront", client: "Acre & Co.", service: "web_dev", status: "active", value: 32_000, overhead: 2_500, since: 74, teamCost: 18_000, progress: 70, bigExpense: 7_000 },
+    { name: "Vector Site Refresh", client: "Vector Studio", service: "web_dev", status: "active", value: 41_000, overhead: 2_000, since: 62, teamCost: 15_000, progress: 55 },
+    { name: "Meridian Campaign", client: "Meridian Group", service: "marketing", status: "active", value: 52_000, overhead: 2_500, since: 55, teamCost: 21_000, progress: 44 },
+    { name: "Brightpath Advisory", client: "Brightpath", service: "consulting", status: "active", value: 33_000, overhead: 1_500, since: 40, teamCost: 13_000, progress: 38 },
+    { name: "Lumen Storefront", client: "Lumen Retail", service: "web_dev", status: "active", value: 60_000, overhead: 3_000, since: 22, teamCost: 16_000, progress: 22 },
+    { name: "Cobalt Brand System", client: "Cobalt Health", service: "design", status: "delivered", value: 64_000, overhead: 3_000, since: 130, teamCost: 30_000, progress: 100 },
   ];
 
   const projects = await Promise.all(
@@ -171,43 +154,16 @@ async function main() {
           status: p.status,
           serviceType: p.service,
           contractValue: D(p.value),
+          teamCost: D(p.teamCost),
           allocatedOverhead: D(p.overhead),
-          startDate: day(-Math.max(p.since, 20) - 20),
-          deadline: day(40),
+          startDate: day(-p.since),
+          deadline: day(p.status === "delivered" ? -10 : 55 - p.since / 2),
           progressPercentage: p.progress,
-          createdAt: day(-Math.max(p.since, 20) - 20),
+          createdAt: day(-p.since),
         },
       }),
     ),
   );
-
-  // ---- hours: spread each project's labor budget across its weekdays ----
-  const hourRows: Prisma.ProjectHoursCreateManyInput[] = [];
-  projects.forEach((proj, idx) => {
-    const spec = P[idx];
-    if (spec.people === 0 || spec.labor === 0) return;
-    const days: Date[] = [];
-    for (let d = Math.min(spec.since, 34); d >= 0; d--) {
-      const date = day(-d);
-      if (isWeekday(date)) days.push(date);
-    }
-    const perDay = spec.labor / days.length;
-    days.forEach((date, di) => {
-      for (let person = 0; person < spec.people; person++) {
-        const who = staff[(idx + person + di) % staff.length];
-        const wobble = 1 + (((di + person) % 5) - 2) * 0.12; // ~0.76–1.24
-        const dayCost = (perDay / spec.people) * wobble;
-        hourRows.push({
-          projectId: proj.id,
-          userId: who.id,
-          hoursLogged: D(Math.max(0.5, dayCost / who.rate)),
-          dateLogged: date,
-          description: "Project work",
-        });
-      }
-    });
-  });
-  await prisma.projectHours.createMany({ data: hourRows });
 
   // ---- project expenses: 5 small items per project at well-spread dates ----
   const expenseRows: Prisma.ProjectExpenseCreateManyInput[] = [];
@@ -316,14 +272,14 @@ async function main() {
     });
   }
 
-  const [pc, cc, ic, hc] = await prisma.$transaction([
+  const [pc, cc, ic, ec] = await prisma.$transaction([
     prisma.project.count({ where: { agencyId } }),
     prisma.client.count({ where: { agencyId } }),
     prisma.invoice.count({ where: { agencyId } }),
-    prisma.projectHours.count({ where: { project: { agencyId } } }),
+    prisma.projectExpense.count({ where: { project: { agencyId } } }),
   ]);
   console.log(
-    `Seeded agency ${agencyId}: ${pc} projects, ${cc} clients, ${ic} invoices, ${hc} time entries.`,
+    `Seeded agency ${agencyId}: ${pc} projects, ${cc} clients, ${ic} invoices, ${ec} expenses.`,
   );
 }
 

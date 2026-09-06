@@ -103,25 +103,6 @@ export default async function ProjectDetailPage({
       </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Time */}
-        <Card>
-          <CardHeader
-            title="Time entries"
-            subtitle={`${p.hours.length} logged · ${formatCurrency(c.teamCost)}`}
-            menu={false}
-          />
-          <MiniTable
-            head={["Person", "Date", "Hours", "Cost"]}
-            rows={p.hours.slice(0, 8).map((h) => [
-              h.person,
-              formatDate(h.dateLogged),
-              h.hoursLogged.toString(),
-              formatCurrency(h.cost),
-            ])}
-            empty="No time logged yet."
-          />
-        </Card>
-
         {/* Expenses */}
         <Card>
           <CardHeader

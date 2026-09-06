@@ -21,10 +21,12 @@ export interface DashProjectInput {
   status: string;
   serviceType: string;
   contractValue: number;
+  teamCost: number;
   allocatedOverhead: number;
   createdAt: Date;
+  startDate: Date | null;
+  deadline: Date | null;
   clientName: string;
-  hours: { hoursLogged: number; rate: number; date: Date }[];
   expenses: { amount: number; date: Date }[];
 }
 
@@ -88,16 +90,13 @@ export function buildDashboardView(input: DashInputs): DashboardView {
   const thirtyDaysAgo = new Date(now);
   thirtyDaysAgo.setDate(now.getDate() - 30);
 
-  // ---- per-project profit (all-time) ----
+  // ---- per-project profit ----
   const withProfit = projects.map((p) => ({
     project: p,
     ...calculateProjectProfit({
       contractValue: p.contractValue,
+      teamCost: p.teamCost,
       allocatedOverhead: p.allocatedOverhead,
-      hours: p.hours.map((h) => ({
-        hoursLogged: h.hoursLogged,
-        internalCostRate: h.rate,
-      })),
       expenses: p.expenses.map((e) => ({ amount: e.amount })),
     }),
   }));
@@ -147,37 +146,50 @@ export function buildDashboardView(input: DashInputs): DashboardView {
   ];
 
   // ---- profit series: rolling 7-day totals sampled every ~2.5 days ----
-  // A trailing window keeps the lines readable when real cash flow is lumpy
-  // (a single milestone payment gets spread across the week it belongs to).
+  // Revenue = payments received in the window. Cost = project expenses in the
+  // window + each active project's team cost amortised linearly across its
+  // start→deadline span (fallback 90 days).
   const BUCKETS = 12;
   const bucketDays = 30 / BUCKETS;
   const TRAIL_MS = 7 * 24 * 3600 * 1000;
-  const costEvents = [
-    ...projects.flatMap((p) =>
-      p.hours.map((h) => ({ date: h.date, amount: h.hoursLogged * h.rate })),
-    ),
-    ...projects.flatMap((p) =>
-      p.expenses.map((e) => ({ date: e.date, amount: e.amount })),
-    ),
-  ];
+  const DAY_MS = 24 * 3600 * 1000;
+
+  const expenseEvents = projects.flatMap((p) =>
+    p.expenses.map((e) => ({ date: e.date, amount: e.amount })),
+  );
   const sumIn = <T extends { date: Date; amount: number }>(
     rows: T[],
     from: Date,
     to: Date,
   ) => rows.filter((r) => r.date >= from && r.date < to).reduce((s, r) => s + r.amount, 0);
 
+  const dailyLabour = projects
+    .filter((p) => p.status !== "closed" && p.teamCost > 0)
+    .map((p) => {
+      const span =
+        p.startDate && p.deadline
+          ? Math.min(
+              365,
+              Math.max(7, (p.deadline.getTime() - p.startDate.getTime()) / DAY_MS),
+            )
+          : 90;
+      return { perDay: p.teamCost / span };
+    });
+  const totalDailyLabour = dailyLabour.reduce((s, d) => s + d.perDay, 0);
+
   const points: ProfitPoint[] = [];
   for (let b = 1; b <= BUCKETS; b++) {
     const end = new Date(windowStart);
     end.setDate(windowStart.getDate() + Math.round(b * bucketDays));
     const from = new Date(Math.max(windowStart.getTime(), end.getTime() - TRAIL_MS));
+    const windowDays = (end.getTime() - from.getTime()) / DAY_MS;
 
     const revenue = sumIn(
       payments.map((p) => ({ date: p.date, amount: p.amount })),
       from,
       end,
     );
-    const cost = sumIn(costEvents, from, end);
+    const cost = sumIn(expenseEvents, from, end) + totalDailyLabour * windowDays;
 
     points.push({
       label: end.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -322,16 +334,12 @@ export async function getDashboardData(
         status: true,
         serviceType: true,
         contractValue: true,
+        teamCost: true,
         allocatedOverhead: true,
         createdAt: true,
+        startDate: true,
+        deadline: true,
         client: { select: { name: true } },
-        projectHours: {
-          select: {
-            hoursLogged: true,
-            dateLogged: true,
-            user: { select: { internalCostRate: true } },
-          },
-        },
         projectExpenses: { select: { amount: true, dateIncurred: true } },
       },
     }),
@@ -364,14 +372,12 @@ export async function getDashboardData(
       status: p.status,
       serviceType: p.serviceType,
       contractValue: num(p.contractValue),
+      teamCost: num(p.teamCost),
       allocatedOverhead: num(p.allocatedOverhead),
       createdAt: p.createdAt,
+      startDate: p.startDate,
+      deadline: p.deadline,
       clientName: p.client.name,
-      hours: p.projectHours.map((h) => ({
-        hoursLogged: num(h.hoursLogged),
-        rate: num(h.user.internalCostRate),
-        date: h.dateLogged,
-      })),
       expenses: p.projectExpenses.map((e) => ({
         amount: num(e.amount),
         date: e.dateIncurred,

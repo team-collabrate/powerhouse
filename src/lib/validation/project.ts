@@ -16,6 +16,7 @@ const base = z.object({
   status: z.enum(PROJECT_STATUSES).default("active"),
   serviceType: z.enum(SERVICE_TYPES).default("other"),
   contractValue: z.coerce.number().positive("Must be greater than 0"),
+  teamCost: z.coerce.number().min(0).default(0),
   allocatedOverhead: z.coerce.number().min(0).default(0),
   progressPercentage: z.coerce.number().int().min(0).max(100).default(0),
   startDate: dateString,

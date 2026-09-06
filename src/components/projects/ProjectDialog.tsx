@@ -27,6 +27,7 @@ type FormState = {
   serviceType: string;
   status: string;
   contractValue: string;
+  teamCost: string;
   allocatedOverhead: string;
   progressPercentage: string;
   startDate: string;
@@ -41,6 +42,7 @@ function initial(project?: ProjectDetail): FormState {
     serviceType: project?.serviceType ?? "other",
     status: project?.status ?? "active",
     contractValue: project ? String(project.contractValue) : "",
+    teamCost: project ? String(project.teamCost) : "0",
     allocatedOverhead: project ? String(project.allocatedOverhead) : "0",
     progressPercentage: project ? String(project.progressPercentage) : "0",
     startDate: project?.startDate ? project.startDate.slice(0, 10) : "",
@@ -87,6 +89,7 @@ export function ProjectDialog({
       serviceType: form.serviceType,
       status: form.status,
       contractValue: form.contractValue,
+      teamCost: form.teamCost || "0",
       allocatedOverhead: form.allocatedOverhead || "0",
       progressPercentage: form.progressPercentage || "0",
       startDate: form.startDate,
@@ -201,6 +204,18 @@ export function ProjectDialog({
                   error={errors.contractValue}
                 />
                 <Field
+                  label="Team cost ($)"
+                  type="number"
+                  min={0}
+                  step="100"
+                  value={form.teamCost}
+                  onChange={(e) => set("teamCost", e.target.value)}
+                  error={errors.teamCost}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field
                   label="Allocated overhead ($)"
                   type="number"
                   min={0}
@@ -209,9 +224,6 @@ export function ProjectDialog({
                   onChange={(e) => set("allocatedOverhead", e.target.value)}
                   error={errors.allocatedOverhead}
                 />
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
                 <Field
                   label="Progress (%)"
                   type="number"
@@ -221,6 +233,9 @@ export function ProjectDialog({
                   onChange={(e) => set("progressPercentage", e.target.value)}
                   error={errors.progressPercentage}
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <Field
                   label="Start date"
                   type="date"

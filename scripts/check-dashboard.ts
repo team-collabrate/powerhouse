@@ -24,13 +24,12 @@ const input: DashInputs = {
       status: "active",
       serviceType: "web_dev",
       contractValue: 100_000,
+      teamCost: 45_000, // 45k + 8k exp + 5k oh = 58k -> 42% margin
       allocatedOverhead: 5_000,
       createdAt: monthsBack(3),
+      startDate: monthsBack(3),
+      deadline: d(30),
       clientName: "Acme",
-      hours: [
-        { hoursLogged: 40, rate: 100, date: d(-5) }, // 4,000
-        { hoursLogged: 30, rate: 100, date: d(-20) }, // 3,000
-      ],
       expenses: [{ amount: 8_000, date: d(-10) }],
     },
     {
@@ -38,10 +37,12 @@ const input: DashInputs = {
       status: "active",
       serviceType: "design",
       contractValue: 20_000,
+      teamCost: 16_500, // 16.5k + 2k + 1k = 19.5k -> ~2.5% margin (< 15)
       allocatedOverhead: 1_000,
       createdAt: d(-3), // new this month
+      startDate: d(-3),
+      deadline: d(40),
       clientName: "Beta Co",
-      hours: [{ hoursLogged: 150, rate: 110, date: d(-8) }], // 16,500 -> way over
       expenses: [{ amount: 2_000, date: d(-8) }],
     },
     {
@@ -49,10 +50,12 @@ const input: DashInputs = {
       status: "delivered",
       serviceType: "consulting",
       contractValue: 40_000,
+      teamCost: 20_000,
       allocatedOverhead: 0,
       createdAt: monthsBack(5),
+      startDate: monthsBack(5),
+      deadline: monthsBack(1),
       clientName: "Gamma",
-      hours: [],
       expenses: [],
     },
   ],

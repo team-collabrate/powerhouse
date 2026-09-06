@@ -65,16 +65,11 @@ export async function listProjects(
       status: true,
       serviceType: true,
       contractValue: true,
+      teamCost: true,
       allocatedOverhead: true,
       progressPercentage: true,
       deadline: true,
       client: { select: { name: true } },
-      projectHours: {
-        select: {
-          hoursLogged: true,
-          user: { select: { internalCostRate: true } },
-        },
-      },
       projectExpenses: { select: { amount: true } },
     },
   });
@@ -82,11 +77,8 @@ export async function listProjects(
   const all: ProjectListItem[] = rows.map((p) => {
     const profit = calculateProjectProfit({
       contractValue: num(p.contractValue),
+      teamCost: num(p.teamCost),
       allocatedOverhead: num(p.allocatedOverhead),
-      hours: p.projectHours.map((h) => ({
-        hoursLogged: num(h.hoursLogged),
-        internalCostRate: num(h.user.internalCostRate),
-      })),
       expenses: p.projectExpenses.map((e) => ({ amount: num(e.amount) })),
     });
     return {
@@ -132,6 +124,7 @@ export interface ProjectDetail {
   status: ProjectStatus;
   serviceType: ServiceType;
   contractValue: number;
+  teamCost: number;
   allocatedOverhead: number;
   startDate: string | null;
   deadline: string | null;
@@ -145,14 +138,6 @@ export interface ProjectDetail {
     profit: number;
     profitMargin: number;
   };
-  hours: {
-    id: string;
-    person: string;
-    hoursLogged: number;
-    cost: number;
-    dateLogged: string;
-    description: string | null;
-  }[];
   expenses: {
     id: string;
     category: string;
@@ -189,22 +174,13 @@ export async function getProject(
       status: true,
       serviceType: true,
       contractValue: true,
+      teamCost: true,
       allocatedOverhead: true,
       startDate: true,
       deadline: true,
       progressPercentage: true,
       createdAt: true,
       client: { select: { name: true } },
-      projectHours: {
-        orderBy: { dateLogged: "desc" },
-        select: {
-          id: true,
-          hoursLogged: true,
-          dateLogged: true,
-          description: true,
-          user: { select: { fullName: true, internalCostRate: true } },
-        },
-      },
       projectExpenses: {
         orderBy: { dateIncurred: "desc" },
         select: {
@@ -233,14 +209,6 @@ export async function getProject(
   });
   if (!p) return null;
 
-  const hours = p.projectHours.map((h) => ({
-    id: h.id,
-    person: h.user.fullName,
-    hoursLogged: num(h.hoursLogged),
-    cost: num(h.hoursLogged) * num(h.user.internalCostRate),
-    dateLogged: h.dateLogged.toISOString(),
-    description: h.description,
-  }));
   const expenses = p.projectExpenses.map((e) => ({
     id: e.id,
     category: e.category,
@@ -251,11 +219,8 @@ export async function getProject(
 
   const profit = calculateProjectProfit({
     contractValue: num(p.contractValue),
+    teamCost: num(p.teamCost),
     allocatedOverhead: num(p.allocatedOverhead),
-    hours: p.projectHours.map((h) => ({
-      hoursLogged: num(h.hoursLogged),
-      internalCostRate: num(h.user.internalCostRate),
-    })),
     expenses: expenses.map((e) => ({ amount: e.amount })),
   });
 
@@ -268,6 +233,7 @@ export async function getProject(
     status: p.status as ProjectStatus,
     serviceType: p.serviceType as ServiceType,
     contractValue: num(p.contractValue),
+    teamCost: num(p.teamCost),
     allocatedOverhead: num(p.allocatedOverhead),
     startDate: p.startDate ? p.startDate.toISOString() : null,
     deadline: p.deadline ? p.deadline.toISOString() : null,
@@ -281,7 +247,6 @@ export async function getProject(
       profit: profit.profit,
       profitMargin: profit.profitMargin,
     },
-    hours,
     expenses,
     milestones: p.milestones.map((m) => ({
       id: m.id,

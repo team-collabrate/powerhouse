@@ -1,7 +1,6 @@
 import {
   BarChart2,
   Briefcase,
-  Clock,
   CreditCard,
   FileText,
   PieChart,
@@ -12,7 +11,6 @@ import {
 export const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart2 },
   { href: "/projects", label: "Projects", icon: Briefcase },
-  { href: "/time", label: "Time Tracking", icon: Clock },
   { href: "/expenses", label: "Expenses", icon: CreditCard },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/clients", label: "Clients", icon: Users },

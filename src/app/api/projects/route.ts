@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       status: input.status,
       serviceType: input.serviceType,
       contractValue: input.contractValue,
+      teamCost: input.teamCost,
       allocatedOverhead: input.allocatedOverhead,
       progressPercentage: input.progressPercentage,
       startDate: input.startDate ? new Date(input.startDate) : null,
