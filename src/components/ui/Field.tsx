@@ -11,19 +11,19 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-text-primary">
+      <span className="mb-1.5 block text-[13px] font-medium text-ink">
         {label}
       </span>
       <input
         className={cn(
-          "w-full rounded-[var(--radius-sm)] border border-border bg-white px-3 py-2.5 text-sm outline-none",
-          "focus:border-primary",
-          error && "border-error",
+          "h-10 w-full rounded-[var(--radius-sm)] border border-hairline-strong bg-surface px-3 text-[13.5px] outline-none transition-colors",
+          "focus:border-accent",
+          error && "border-loss",
           className,
         )}
         {...props}
       />
-      {error && <span className="mt-1 block text-xs text-error">{error}</span>}
+      {error && <span className="mt-1 block text-[12px] text-loss">{error}</span>}
     </label>
   );
 }

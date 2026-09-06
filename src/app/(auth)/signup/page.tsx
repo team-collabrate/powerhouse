@@ -49,10 +49,10 @@ export default function SignupPage() {
 
   return (
     <>
-      <h1 className="text-lg font-semibold text-text-primary">
+      <h1 className="text-lg font-semibold text-ink">
         Create your agency
       </h1>
-      <p className="mt-1 text-sm text-text-secondary">
+      <p className="mt-1 text-sm text-ink-2">
         Start tracking project profit in minutes.
       </p>
 
@@ -68,14 +68,14 @@ export default function SignupPage() {
           value={form.password}
           onChange={update("password")}
         />
-        {error && <p className="text-xs text-error">{error}</p>}
-        {message && <p className="text-xs text-success">{message}</p>}
+        {error && <p className="text-xs text-loss">{error}</p>}
+        {message && <p className="text-xs text-profit">{message}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Creating…" : "Create account"}
         </Button>
       </form>
 
-      <p className="mt-4 text-sm text-text-secondary">
+      <p className="mt-4 text-sm text-ink-2">
         Already have an account?{" "}
         <Link href="/login" className="font-medium text-accent">
           Sign in

@@ -22,11 +22,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-bg-page">
+    <div className="min-h-screen bg-surface-sunken">
       <Sidebar />
-      <div className="pl-[260px]">
+      <div className="lg:pl-[248px]">
         <Header userEmail={user?.email} />
-        <main className="p-8">{children}</main>
+        <main className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-6">
+          {children}
+        </main>
       </div>
     </div>
   );

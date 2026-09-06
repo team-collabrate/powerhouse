@@ -33,8 +33,8 @@ export default function LoginPage() {
 
   return (
     <>
-      <h1 className="text-lg font-semibold text-text-primary">Sign in</h1>
-      <p className="mt-1 text-sm text-text-secondary">
+      <h1 className="text-lg font-semibold text-ink">Sign in</h1>
+      <p className="mt-1 text-sm text-ink-2">
         Welcome back to your dashboard.
       </p>
 
@@ -53,13 +53,13 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        {error && <p className="text-xs text-error">{error}</p>}
+        {error && <p className="text-xs text-loss">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </Button>
       </form>
 
-      <p className="mt-4 text-sm text-text-secondary">
+      <p className="mt-4 text-sm text-ink-2">
         No account?{" "}
         <Link href="/signup" className="font-medium text-accent">
           Create one

@@ -2,75 +2,110 @@
 
 /*
   Design tokens — docs/design/DASHBOARD_DESIGN_SPECIFICATION.md
-  Palette: green #5cd65c (growth/profit), purple #9933ff (actions).
+  Palette: green #5cd65c (growth/profit, semantic only), purple #9933ff (single accent).
   Font: Inter. Light mode only for MVP (dark mode = Phase 2).
+
+  Discipline: purple appears ONLY on the primary action, the active nav marker,
+  and the primary chart series. Green appears ONLY on positive deltas / paid state.
+  Everything else is neutral. No decorative gradients.
 */
 
 :root {
-  --color-primary: #5cd65c;
-  --color-primary-hover: #4bc44b;
-  --color-primary-soft: rgba(92, 214, 92, 0.1);
+  --accent: #9933ff;
+  --accent-strong: #7d1fe0;
+  --accent-soft: #f3ecff;
+  --accent-ring: color-mix(in srgb, var(--accent) 35%, transparent);
 
-  --color-accent: #9933ff;
-  --color-accent-hover: #8a1fee;
-  --color-accent-soft: rgba(153, 51, 255, 0.1);
+  --profit: #1b8917;
+  --profit-soft: #e7f4e6;
+  --loss: #dc2626;
+  --loss-soft: #fdeaea;
+  --pending: #b45309;
+  --pending-soft: #faf1e3;
 
-  --color-text-primary: #161616;
-  --color-text-secondary: #525252;
-  --color-text-muted: #8d8d8d;
+  --ink: #14151a;
+  --ink-2: #5b606b;
+  --ink-3: #8b909c;
 
-  --color-bg-page: #ffffff;
-  --color-bg-card: #fafafa;
-  --color-bg-alt: #f4f4f4;
-  --color-border: #e0e0e0;
+  --surface: #ffffff;
+  --surface-sunken: #f7f7f8;
+  --surface-raised: #ffffff;
+  --hairline: #ececee;
+  --hairline-strong: #e0e0e3;
 
-  --color-success: #1b8917;
-  --color-warning: #b89500;
-  --color-error: #d13438;
+  --shadow-card: 0 1px 2px rgba(20, 21, 26, 0.04);
+  --shadow-pop: 0 8px 28px -6px rgba(20, 21, 26, 0.16), 0 2px 6px rgba(20, 21, 26, 0.06);
+  --shadow-nav: 0 1px 3px rgba(20, 21, 26, 0.08), 0 0 0 1px var(--hairline);
 
-  --shadow-1: 0 2px 4px rgba(0, 0, 0, 0.08);
-  --shadow-2: 0 4px 8px rgba(0, 0, 0, 0.12);
-  --shadow-3: 0 8px 16px rgba(0, 0, 0, 0.16);
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
 }
 
 @theme inline {
-  --color-primary: var(--color-primary);
-  --color-primary-hover: var(--color-primary-hover);
-  --color-primary-soft: var(--color-primary-soft);
-  --color-accent: var(--color-accent);
-  --color-accent-hover: var(--color-accent-hover);
-  --color-accent-soft: var(--color-accent-soft);
-  --color-text-primary: var(--color-text-primary);
-  --color-text-secondary: var(--color-text-secondary);
-  --color-text-muted: var(--color-text-muted);
-  --color-bg-page: var(--color-bg-page);
-  --color-bg-card: var(--color-bg-card);
-  --color-bg-alt: var(--color-bg-alt);
-  --color-border: var(--color-border);
-  --color-success: var(--color-success);
-  --color-warning: var(--color-warning);
-  --color-error: var(--color-error);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-profit: var(--profit);
+  --color-profit-soft: var(--profit-soft);
+  --color-loss: var(--loss);
+  --color-loss-soft: var(--loss-soft);
+  --color-pending: var(--pending);
+  --color-pending-soft: var(--pending-soft);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-raised: var(--surface-raised);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --radius-xs: var(--radius-xs);
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--color-bg-page);
-  color: var(--color-text-primary);
+  background: var(--surface-sunken);
+  color: var(--ink);
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
+  letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv05" 1;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
 
 *:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--accent-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {
