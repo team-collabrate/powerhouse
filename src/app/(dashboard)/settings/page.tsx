@@ -4,10 +4,12 @@ import {
   getAgencySettings,
   listCompanyExpenses,
   listTeamMembers,
+  listInvites,
 } from "@/lib/queries/settings";
 import { Card, CardHeader } from "@/components/dashboard/Card";
 import { AgencySettingsForm } from "@/components/settings/AgencySettingsForm";
 import { CompanyExpensesCard } from "@/components/settings/CompanyExpensesCard";
+import { TeamCard } from "@/components/settings/TeamCard";
 
 export const dynamic = "force-dynamic";
 
@@ -35,10 +37,11 @@ export default async function SettingsPage() {
     );
   }
 
-  const [settings, overhead, team] = await Promise.all([
+  const [settings, overhead, team, invites] = await Promise.all([
     getAgencySettings(ctx.agencyId),
     listCompanyExpenses(ctx.agencyId),
     listTeamMembers(ctx.agencyId, ctx.userId),
+    listInvites(ctx.agencyId),
   ]);
 
   return (
@@ -59,55 +62,7 @@ export default async function SettingsPage() {
 
       <CompanyExpensesCard data={overhead} />
 
-      <Card>
-        <CardHeader
-          title="Team"
-          subtitle={`${team.filter((m) => m.isActive).length} active`}
-          menu={false}
-          action={
-            <span className="text-[12px] text-ink-3">Invites coming soon</span>
-          }
-        />
-        <div className="overflow-x-auto px-2 pb-3 pt-2">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                {["Name", "Email", "Role"].map((h) => (
-                  <th
-                    key={h}
-                    className="eyebrow px-3 pb-2 pt-1 text-left font-semibold"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {team.map((m) => (
-                <tr key={m.id} className="border-t border-hairline">
-                  <td className="px-3 py-2 text-[12.5px] font-medium text-ink">
-                    {m.fullName}
-                    {m.isYou && (
-                      <span className="ml-2 text-[11px] text-ink-3">you</span>
-                    )}
-                    {!m.isActive && (
-                      <span className="ml-2 rounded bg-surface-sunken px-1.5 py-0.5 text-[10px] text-ink-3">
-                        inactive
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-[12.5px] text-ink-2">
-                    {m.email}
-                  </td>
-                  <td className="px-3 py-2 text-[12.5px] text-ink-2">
-                    {m.roleLabel}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <TeamCard members={team} invites={invites} />
     </div>
   );
 }

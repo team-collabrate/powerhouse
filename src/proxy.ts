@@ -11,8 +11,9 @@ export const config = {
      * Match all request paths except:
      * - _next/static, _next/image, favicon.ico
      * - image / font files
-     * - /portal/* (token-based public client portal, Sprint 7)
+     * - /portal/* (token-based public client portal)
+     * - /invite/*  (token-based public teammate invite)
      */
-    "/((?!_next/static|_next/image|favicon.ico|portal|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|portal|invite|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)",
   ],
 };

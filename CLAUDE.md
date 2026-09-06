@@ -121,10 +121,10 @@ Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
 ## Status
 
 Done: Sprint 1 auth · dashboard · Projects · Expenses · Invoices+payments ·
-RLS+roles · Clients · Settings · Analytics · Client portal · Invoice email.
+RLS+roles · Clients · Settings · Analytics · Client portal · Invoice email ·
+CI · team invites.
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: invoice PDF · team invites · overhead→project allocation · milestones ·
-deploy/CI.
+Next: invoice PDF · overhead→project allocation · milestones · deploy.
 
 ### Client portal + invoice email
 
@@ -161,8 +161,20 @@ with the full cost breakdown, ranked by margin, CSV via
   /api/company-expenses`, `PATCH/DELETE /api/company-expenses/[id]`.
   Shows normalised $/mo recurring + last-month total. NOT yet wired to
   project `allocatedOverhead` (that allocation is a separate design step).
-- Team members: read-only list. Invites don't exist yet, so every real
-  signup is an admin.
+- Team (`TeamCard`): admins (`team:manage`) invite teammates, change roles
+  inline, and deactivate/reactivate members. Assignable roles: admin /
+  manager / team_member. Guards: can't change your own role, can't demote or
+  deactivate the last active admin (`countActiveAdmins()`).
+- Invites: `POST /api/team/invites` creates an `invites` row (random token)
+  and emails a link via `sendInviteEmail()` (falls back to a copyable link
+  without `RESEND_API_KEY`). `DELETE /api/team/invites/[id]` revokes a
+  pending one. `/invite/[token]` is public (proxy excludes `/invite`) —
+  shows the agency brand + role, collects name + password, then
+  `POST /api/invite/[token]/accept` provisions a confirmed Supabase auth
+  user via the service-role client (`src/lib/supabase/admin.ts`), creates
+  the `users` row + marks the invite accepted in one transaction (rolls
+  back the auth user on failure), and signs them in. Needs
+  `SUPABASE_SERVICE_ROLE_KEY`.
 
 ### Invoices
 

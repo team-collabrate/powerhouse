@@ -165,3 +165,35 @@ export async function listTeamMembers(
     isYou: u.id === currentUserId,
   }));
 }
+
+export interface PendingInvite {
+  id: string;
+  email: string;
+  role: string;
+  roleLabel: string;
+  token: string;
+  createdAt: string;
+}
+
+export async function listInvites(agencyId: string): Promise<PendingInvite[]> {
+  const rows = await prisma.invite.findMany({
+    where: { agencyId, acceptedAt: null },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, email: true, role: true, token: true, createdAt: true },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    email: r.email,
+    role: r.role,
+    roleLabel: ROLE_LABELS[r.role as Role] ?? r.role,
+    token: r.token,
+    createdAt: r.createdAt.toISOString(),
+  }));
+}
+
+/** For the "can't remove the last admin" guard. */
+export async function countActiveAdmins(agencyId: string): Promise<number> {
+  return prisma.user.count({
+    where: { agencyId, role: "admin", isActive: true },
+  });
+}

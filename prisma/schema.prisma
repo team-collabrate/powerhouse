@@ -29,6 +29,7 @@ model Agency {
   invoices        Invoice[]
   companyExpenses CompanyExpense[]
   activityLogs    ActivityLog[]
+  invites         Invite[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -226,6 +227,21 @@ model CompanyExpense {
 
   @@index([agencyId])
   @@map("company_expenses")
+}
+
+model Invite {
+  id         String    @id @default(cuid())
+  agencyId   String    @map("agency_id")
+  agency     Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  email      String
+  role       String // manager, team_member, admin
+  token      String    @unique
+  invitedBy  String    @map("invited_by")
+  acceptedAt DateTime? @map("accepted_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([agencyId])
+  @@map("invites")
 }
 
 model ActivityLog {

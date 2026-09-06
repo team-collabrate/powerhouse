@@ -72,6 +72,49 @@ export async function sendInvoiceEmail(p: {
   }
 }
 
+export async function sendInviteEmail(p: {
+  to: string;
+  agencyName: string;
+  role: string;
+  inviteUrl: string;
+}): Promise<SendResult> {
+  if (!resend) {
+    return {
+      delivered: false,
+      note: "Invite created. Copy the link below — or set RESEND_API_KEY to email it.",
+    };
+  }
+  const html = `
+  <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#14151a">
+    <p style="font-size:14px;line-height:1.6">
+      You've been invited to join <strong>${escapeHtml(p.agencyName)}</strong>
+      on Agency Dashboard as <strong>${escapeHtml(p.role)}</strong>.
+    </p>
+    <p style="margin:24px 0">
+      <a href="${p.inviteUrl}"
+         style="background:#9933ff;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600">
+        Accept invite
+      </a>
+    </p>
+    <p style="font-size:12px;color:#8b909c">Or paste this link:<br>${p.inviteUrl}</p>
+  </div>`;
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: p.to,
+      subject: `You're invited to ${p.agencyName}`,
+      html,
+    });
+    if (error) return { delivered: false, note: `Invite created, email failed: ${error.message}` };
+    return { delivered: true, note: `Invite emailed to ${p.to}` };
+  } catch (e) {
+    return {
+      delivered: false,
+      note: `Invite created, email failed: ${e instanceof Error ? e.message : "unknown error"}`,
+    };
+  }
+}
+
 function escapeHtml(s: string) {
   return s.replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!,
