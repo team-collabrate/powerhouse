@@ -117,9 +117,20 @@ Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
 
 Done: Sprint 1 auth · dashboard UI + data layer · Projects CRUD · Expense
 logging · Invoices + payments · RLS + role enforcement · Clients CRUD ·
-Settings.
+Settings · Analytics.
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: analytics / client portal / invoice email+PDF / team invites.
+Next: client portal / invoice email+PDF / team invites / overhead→project
+allocation.
+
+### Analytics (`/analytics`, any signed-in user)
+
+`src/lib/queries/analytics.ts` `getAnalytics(agencyId, months)` — months is
+3/6/12 (`?months=`). Cash flow = payments received vs (project expenses +
+company overhead) by month, both by date (team cost has no date so it's
+excluded from the monthly view — that view is cash movement, the
+profitability table below is full cost). Profitability table = every project
+with the full cost breakdown, ranked by margin, CSV via
+`GET /api/analytics/export` (`profitabilityCsv()` is pure + unit-tested).
 
 ### Settings (`/settings`, `settings:manage` = admin only)
 

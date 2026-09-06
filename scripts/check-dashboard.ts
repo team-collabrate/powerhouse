@@ -6,6 +6,7 @@ import {
   type DashInputs,
 } from "@/lib/queries/dashboard";
 import { can } from "@/lib/permissions";
+import { profitabilityCsv } from "@/lib/queries/analytics";
 
 const now = new Date("2026-09-15T12:00:00Z");
 const d = (offset: number) => {
@@ -149,6 +150,32 @@ check("team_member cannot write projects", !can("team_member", "project:write"))
 check("team_member cannot write invoices", !can("team_member", "invoice:write"));
 check("client can do nothing", !can("client", "expense:write"));
 check("unknown role denied", !can("nonsense", "project:write"));
+
+console.log("\nanalytics csv:");
+const csv = profitabilityCsv([
+  {
+    id: "p1",
+    name: 'Re"brand, Ltd',
+    client: "Acme",
+    status: "active",
+    serviceType: "design",
+    contractValue: 50000,
+    teamCost: 20000,
+    expenses: 3000,
+    overhead: 1000,
+    totalCost: 24000,
+    profit: 26000,
+    margin: 52,
+  },
+]);
+const csvLines = csv.split("\n");
+check("csv has a header + one row", csvLines.length === 2);
+check(
+  "csv quotes fields with commas/quotes",
+  csvLines[1].startsWith('"Re""brand, Ltd",Acme,active'),
+  csvLines[1],
+);
+check("csv ends with the margin value", csvLines[1].endsWith(",52"));
 
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);
