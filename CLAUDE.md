@@ -88,6 +88,11 @@ CI (`.github/workflows/ci.yml`, on push to main + PRs): `npm ci` →
 `next typegen` → typecheck → lint (`--max-warnings 0`) → `npm test` → build.
 No DB/secrets needed — every page guards on missing env.
 
+Deploy: Vercel, see `DEPLOY.md`. `vercel-build` = `prisma migrate deploy &&
+next build` (migrations apply on every deploy); `binaryTargets` includes the
+Vercel runtime; Node pinned to 22.x. Needs the 8 env vars in `DEPLOY.md` +
+Supabase Auth redirect URLs + a verified Resend sender.
+
 ## Dashboard
 
 `/dashboard` is a server component. Data flow:
@@ -145,7 +150,8 @@ Done: Sprint 1 auth · dashboard · Projects · Expenses · Invoices+payments ·
 RLS+roles · Clients · Settings · Analytics · Client portal · Invoice email ·
 CI · team invites · overhead→project allocation.
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: invoice PDF · milestones · deploy.
+Deploy: repo is Vercel-ready (`DEPLOY.md`); account-bound steps pending.
+Next: invoice PDF · milestones · notifications.
 
 ### Client portal + invoice email
 
