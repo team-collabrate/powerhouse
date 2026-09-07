@@ -42,6 +42,13 @@ export async function updateSession(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublic) {
+    // API clients get a clean 401; page requests get bounced to login.
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { success: false, error: { code: "UNAUTHORIZED", message: "Not signed in" } },
+        { status: 401 },
+      );
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
