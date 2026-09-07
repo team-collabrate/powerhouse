@@ -106,7 +106,7 @@ function check(label: string, cond: boolean, detail?: unknown) {
 console.log("buildDashboardView:");
 check("greeting passes through", v.greetingName === "Bella");
 check("not flagged as demo", v.isDemo === false);
-check("revenue MTD = $25,000", v.kpis[0].value === "$25,000", v.kpis[0].value);
+check("revenue MTD = ₹25,000", v.kpis[0].value === "₹25,000", v.kpis[0].value);
 check(
   "revenue delta = +150.0% up (same-period MoM, ignores Aug 28)",
   v.kpis[0].delta?.value === "+150.0%" && v.kpis[0].delta?.direction === "up",
@@ -114,10 +114,10 @@ check(
 );
 check("active projects = 2", v.kpis[1].value === "2", v.kpis[1].value);
 check("new-this-month delta = +1", v.kpis[1].delta?.value === "+1", v.kpis[1].delta);
-check("outstanding = $21,000 (12k + 9k)", v.kpis[3].value === "$21,000", v.kpis[3].value);
+check("outstanding = ₹21,000 (12k + 9k)", v.kpis[3].value === "₹21,000", v.kpis[3].value);
 check(
   "revenue KPI shows target progress (25k / 50k = 50%)",
-  v.kpis[0].progress === 50 && v.kpis[0].hint === "50% of $50,000 target",
+  v.kpis[0].progress === 50 && v.kpis[0].hint === "50% of ₹50,000 target",
   { progress: v.kpis[0].progress, hint: v.kpis[0].hint },
 );
 check("profit series has 12 points", v.profit.points.length === 12, v.profit.points.length);

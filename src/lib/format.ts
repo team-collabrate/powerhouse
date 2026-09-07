@@ -1,6 +1,6 @@
-export function formatCurrency(value: number | string, currency = "USD"): string {
+export function formatCurrency(value: number | string, currency = "INR"): string {
   const n = typeof value === "string" ? Number(value) : value;
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
@@ -14,9 +14,9 @@ export function formatPercent(value: number | string, digits = 0): string {
 
 export function formatDate(value: Date | string): string {
   const d = value instanceof Date ? value : new Date(value);
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
+  return new Intl.DateTimeFormat("en-IN", {
     day: "numeric",
+    month: "short",
     year: "numeric",
   }).format(d);
 }

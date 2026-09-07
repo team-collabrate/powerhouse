@@ -54,7 +54,7 @@ export interface AnalyticsResult {
 }
 
 function monthLabel(d: Date, spanYears: boolean) {
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString("en-IN", {
     month: "short",
     ...(spanYears ? { year: "2-digit" } : {}),
   });

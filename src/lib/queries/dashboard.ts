@@ -232,7 +232,7 @@ export function buildDashboardView(input: DashInputs): DashboardView {
       (totalDailyLabour + totalDailyOverhead) * windowDays;
 
     points.push({
-      label: end.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      label: end.toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
       revenue: Math.round(revenue),
       cost: Math.round(cost),
       profit: Math.round(revenue - cost),
@@ -280,7 +280,7 @@ export function buildDashboardView(input: DashInputs): DashboardView {
   for (let m = 5; m >= 0; m--) {
     const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
     bars.push({
-      label: d.toLocaleDateString("en-US", { month: "short" }),
+      label: d.toLocaleDateString("en-IN", { month: "short" }),
       value: growth.get(monthKey(d)) ?? 0,
       highlight: m === 0,
     });

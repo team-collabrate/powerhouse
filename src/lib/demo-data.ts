@@ -3,15 +3,21 @@ import type { DashboardView, ProfitPoint } from "./dashboard-types";
 /*
   Static placeholder used when there is no database connection or the agency
   has no rows yet. Shape matches the live query output in
-  src/lib/queries/dashboard.ts exactly.
+  src/lib/queries/dashboard.ts exactly. Figures are in ₹ for an Indian studio.
 */
 
 const dayLabels = [
-  "Sep 1", "Sep 4", "Sep 7", "Sep 10", "Sep 13", "Sep 16",
-  "Sep 19", "Sep 22", "Sep 25", "Sep 27", "Sep 29", "Sep 30",
+  "1 Sep", "4 Sep", "7 Sep", "10 Sep", "13 Sep", "16 Sep",
+  "19 Sep", "22 Sep", "25 Sep", "27 Sep", "29 Sep", "30 Sep",
 ];
-const revenue = [3200, 3600, 3400, 4200, 4600, 4400, 5200, 5000, 5600, 6100, 5900, 6400];
-const cost = [2100, 2300, 2200, 2600, 2500, 2700, 3000, 2900, 3100, 3300, 3200, 3400];
+const revenue = [
+  128000, 144000, 136000, 168000, 184000, 176000,
+  208000, 200000, 224000, 244000, 236000, 256000,
+];
+const cost = [
+  84000, 92000, 88000, 104000, 100000, 108000,
+  120000, 116000, 124000, 132000, 128000, 136000,
+];
 
 const points: ProfitPoint[] = dayLabels.map((label, i) => ({
   label,
@@ -27,11 +33,11 @@ export const DEMO_DASHBOARD: DashboardView = {
     {
       id: "revenue",
       label: "Revenue (MTD)",
-      value: "$128,400",
+      value: "₹51,20,000",
       delta: { value: "+12.4%", direction: "up" },
       icon: "trending-up",
-      hint: "86% of $150,000 target",
-      progress: 86,
+      hint: "85% of ₹60,00,000 target",
+      progress: 85,
     },
     {
       id: "projects",
@@ -50,14 +56,14 @@ export const DEMO_DASHBOARD: DashboardView = {
     {
       id: "outstanding",
       label: "Outstanding",
-      value: "$23,150",
+      value: "₹9,25,000",
       delta: { value: "-2.4%", direction: "down" },
       icon: "clock",
     },
   ],
   profit: {
     points,
-    yMax: 7000,
+    yMax: 280000,
     tickIndices: [0, 2, 4, 6, 8, 10, 11],
   },
   services: [
@@ -67,9 +73,9 @@ export const DEMO_DASHBOARD: DashboardView = {
     { label: "Consulting", value: 14, color: "#efeaf5" },
   ],
   topProjects: [
-    { name: "Northwind Rebrand", client: "Northwind Traders", margin: 61.2, contract: "$84,000", profit: "$51,400" },
-    { name: "Helio App Launch", client: "Helio Labs", margin: 48.5, contract: "$120,000", profit: "$58,200" },
-    { name: "Acre Storefront", client: "Acre & Co.", margin: 33.9, contract: "$46,000", profit: "$15,600" },
+    { name: "Kirana Fresh Rebrand", client: "Kirana Fresh", margin: 61.2, contract: "₹33,60,000", profit: "₹20,56,000" },
+    { name: "Surya Labs App Launch", client: "Surya Labs", margin: 48.5, contract: "₹48,00,000", profit: "₹23,28,000" },
+    { name: "Bhoomi Storefront", client: "Bhoomi & Co.", margin: 33.9, contract: "₹18,40,000", profit: "₹6,24,000" },
   ],
   clientGrowth: {
     yMax: 24,
@@ -85,21 +91,21 @@ export const DEMO_DASHBOARD: DashboardView = {
     ],
   },
   recentInvoices: [
-    { id: "", number: "INV-2026-041", client: "Helio Labs", status: "paid", amount: "$24,000" },
-    { id: "", number: "INV-2026-040", client: "Northwind Traders", status: "sent", amount: "$18,500" },
-    { id: "", number: "INV-2026-039", client: "Acre & Co.", status: "overdue", amount: "$9,200" },
-    { id: "", number: "INV-2026-038", client: "Vector Studio", status: "paid", amount: "$31,750" },
-    { id: "", number: "INV-2026-037", client: "Meridian Group", status: "draft", amount: "$12,000" },
+    { id: "", number: "INV-2026-041", client: "Surya Labs", status: "paid", amount: "₹9,60,000" },
+    { id: "", number: "INV-2026-040", client: "Kirana Fresh", status: "sent", amount: "₹7,40,000" },
+    { id: "", number: "INV-2026-039", client: "Bhoomi & Co.", status: "overdue", amount: "₹3,68,000" },
+    { id: "", number: "INV-2026-038", client: "Chitra Studio", status: "paid", amount: "₹12,70,000" },
+    { id: "", number: "INV-2026-037", client: "Sankalp Group", status: "draft", amount: "₹4,80,000" },
   ],
   insights: [
     {
-      title: "Acre Storefront is trending under margin",
-      body: "Logged hours are 18% over estimate with 3 weeks to deadline.",
+      title: "Bhoomi Storefront is trending under margin",
+      body: "Projected margin is 8% on a ₹18,40,000 contract.",
       icon: "alert-triangle",
     },
     {
-      title: "2 invoices worth $27,700 are unpaid past 30 days",
-      body: "Northwind and Acre. Consider a reminder before month-end close.",
+      title: "2 invoices worth ₹11,08,000 are unpaid past 30 days",
+      body: "Kirana Fresh and Bhoomi & Co. Consider a reminder before month-end close.",
       icon: "file-text",
     },
   ],

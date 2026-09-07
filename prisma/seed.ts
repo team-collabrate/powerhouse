@@ -2,7 +2,7 @@
   Seeds an agency with realistic demo data so the dashboard shows live numbers
   that look like a healthy studio ~1 week into the month.
 
-  Default: creates/reuses a standalone "Meridian Studio" demo agency.
+  Default: creates/reuses a standalone "Nayan Studio" demo agency.
   To attach the data to YOUR signed-up account instead:
 
     add  SEED_EMAIL="you@example.com"  to .env.local, then  npm run db:seed
@@ -26,6 +26,10 @@ const monthStart = (back: number) => {
   return new Date(n.getFullYear(), n.getMonth() - back, 8, 12);
 };
 const D = (v: number) => new Prisma.Decimal(Math.round(v * 100) / 100);
+// Demo money is authored in "base units"; ×R scales it to rupees so the
+// figures read right for an Indian studio (a ~₹30L project, ~₹25L/mo payroll).
+const R = 40;
+const money = (v: number) => D(v * R);
 
 async function resolveAgency() {
   const email = process.env.SEED_EMAIL;
@@ -39,20 +43,20 @@ async function resolveAgency() {
     return { agencyId: user.agencyId, primaryUserId: user.id };
   }
   const agency = await prisma.agency.upsert({
-    where: { subdomain: "meridian-demo" },
+    where: { subdomain: "nayan-demo" },
     update: {},
     create: {
-      name: "Meridian Studio",
-      subdomain: "meridian-demo",
-      monthlyRevenueTarget: D(90_000),
+      name: "Nayan Studio",
+      subdomain: "nayan-demo",
+      monthlyRevenueTarget: money(90_000),
     },
   });
   const owner = await prisma.user.upsert({
-    where: { email: "owner@meridian.demo" },
+    where: { email: "owner@nayanstudio.demo" },
     update: {},
     create: {
-      email: "owner@meridian.demo",
-      fullName: "Bella Ford",
+      email: "owner@nayanstudio.demo",
+      fullName: "Ananya Rao",
       role: "admin",
       agencyId: agency.id,
     },
@@ -74,19 +78,20 @@ async function main() {
     where: {
       agencyId,
       id: { not: primaryUserId },
-      email: { endsWith: "@meridian.demo" },
+      email: { endsWith: "@nayanstudio.demo" },
     },
   });
 
   await prisma.agency.update({
     where: { id: agencyId },
     data: {
-      monthlyRevenueTarget: D(90_000),
+      name: "Nayan Studio",
+      monthlyRevenueTarget: money(90_000),
       // Demo uses the `percent` rule (6% of contract value) so margins stay
       // realistic — this seed lists Core payroll under company overhead, which
       // the pool methods (even / contract_share) would over-allocate since
-      // labour is already tracked per project as teamCost. Helio keeps a
-      // pinned per-project override below to show that path.
+      // labour is already tracked per project as teamCost. Surya Labs App
+      // Launch keeps a pinned per-project override below to show that path.
       overheadMethod: "percent",
       overheadRate: D(0.06),
     },
@@ -96,18 +101,18 @@ async function main() {
   await prisma.companyExpense.createMany({
     data: (
       [
-        ["rent", "Studio lease", 6_500, true, "monthly"],
+        ["rent", "Studio lease — Indiranagar", 6_500, true, "monthly"],
         ["salary", "Core payroll", 62_000, true, "monthly"],
         ["software", "Design + dev tool stack", 1_400, true, "monthly"],
-        ["insurance", "Professional liability", 2_100, true, "quarterly"],
+        ["insurance", "Professional indemnity", 2_100, true, "quarterly"],
         ["utilities", "Power + internet", 380, true, "monthly"],
-        ["other", "Q3 team offsite", 4_200, false, null],
+        ["other", "Team offsite — Coorg", 4_200, false, null],
       ] as const
     ).map(([category, description, amount, isRecurring, freq], i) => ({
       agencyId,
       category,
       description,
-      amount: D(amount),
+      amount: money(amount),
       dateIncurred: day(-4 - i * 3),
       isRecurring,
       recurringFrequency: freq,
@@ -117,11 +122,11 @@ async function main() {
 
   // ---- team ----
   await Promise.all(
-    ["Priya Anand", "Marcus Lee", "Tomás Rivera", "Dana Whitfield"].map(
+    ["Priya Nair", "Arjun Mehta", "Sneha Reddy", "Rahul Kulkarni"].map(
       (fullName, i) =>
         prisma.user.create({
           data: {
-            email: `member${i + 1}.${agencyId.slice(-6)}@meridian.demo`,
+            email: `member${i + 1}.${agencyId.slice(-6)}@nayanstudio.demo`,
             fullName,
             role: "team_member",
             agencyId,
@@ -133,24 +138,24 @@ async function main() {
   // ---- clients (weighted toward recent months) ----
   const clientSpecs = [
     // projects reference the first 8 by company name
-    ["Northwind Traders", "Isla Fenn", 5],
-    ["Cobalt Health", "Nina Park", 4],
-    ["Helio Labs", "Ken Ortho", 4],
-    ["Vector Studio", "Paul Mreen", 3],
-    ["Acre & Co.", "Rosa Dane", 2],
-    ["Meridian Group", "Ada Cole", 2],
-    ["Brightpath", "Sam Rueda", 1],
-    ["Lumen Retail", "Guy Tran", 1],
+    ["Kirana Fresh", "Aarav Sharma", 5],
+    ["Arogya Health", "Diya Menon", 4],
+    ["Surya Labs", "Kabir Shah", 4],
+    ["Chitra Studio", "Vivaan Rao", 3],
+    ["Bhoomi & Co.", "Meera Pillai", 2],
+    ["Sankalp Group", "Aditi Desai", 2],
+    ["Disha Advisory", "Rohan Gupta", 1],
+    ["Deepam Retail", "Ishaan Verma", 1],
     // additional clients for a fuller, gently rising growth curve
-    ["Sable & Finch", "Nora Beck", 5],
-    ["Pinehill Co-op", "Omar Diaz", 3],
-    ["Kestrel Media", "Ivy Lang", 3],
-    ["Drift Coffee", "Wes Munro", 2],
-    ["Halcyon Spa", "Tara Vance", 1],
-    ["Meadowlark", "Cole Prieto", 0],
-    ["Fernbank Cafe", "Mara Ives", 0],
-    ["Onyx Fitness", "Leo Six", 0],
-    ["Bluewave Swim", "Jae Sun", 0],
+    ["Filter Coffee Co.", "Nisha Bhat", 5],
+    ["Devgiri Co-op", "Karan Malhotra", 3],
+    ["Garud Media", "Isha Kapoor", 3],
+    ["Banyan Cafe", "Dev Joshi", 2],
+    ["Ayur Spa", "Tara Nanda", 1],
+    ["Koyal Foods", "Neha Sinha", 0],
+    ["Neel Textiles", "Manav Rege", 0],
+    ["Akhada Fitness", "Aryan Bose", 0],
+    ["Neer Swimwear", "Riya Chawla", 0],
   ] as const;
   const clients = await Promise.all(
     clientSpecs.map(([name, contact, back]) =>
@@ -177,19 +182,19 @@ async function main() {
   }
 
   // ---- projects: `teamCost` is the estimated internal labour cost, tuned so
-  // each project lands on a sensible margin. Acre is deliberately under 15%
-  // so the "under margin" insight fires. `since` = project age in days.
+  // each project lands on a sensible margin. Bhoomi Storefront is deliberately
+  // under 15% so the "under margin" insight fires. `since` = project age in days.
   // `overhead` is a per-project OVERRIDE — left at 0 so the agency rule
-  // (6% of contract value) applies; Helio pins its own value. ----
+  // (6% of contract value) applies; Surya Labs pins its own value. ----
   const P = [
-    { name: "Northwind Rebrand", client: "Northwind Traders", service: "design", status: "active", value: 84_000, overhead: 0, since: 74, teamCost: 30_000, progress: 62 },
-    { name: "Helio App Launch", client: "Helio Labs", service: "web_dev", status: "active", value: 145_000, overhead: 7_000, since: 74, teamCost: 47_000, progress: 48 },
-    { name: "Acre Storefront", client: "Acre & Co.", service: "web_dev", status: "active", value: 32_000, overhead: 0, since: 74, teamCost: 18_000, progress: 70, bigExpense: 7_000 },
-    { name: "Vector Site Refresh", client: "Vector Studio", service: "web_dev", status: "active", value: 41_000, overhead: 0, since: 62, teamCost: 15_000, progress: 55 },
-    { name: "Meridian Campaign", client: "Meridian Group", service: "marketing", status: "active", value: 52_000, overhead: 0, since: 55, teamCost: 21_000, progress: 44 },
-    { name: "Brightpath Advisory", client: "Brightpath", service: "consulting", status: "active", value: 33_000, overhead: 0, since: 40, teamCost: 13_000, progress: 38 },
-    { name: "Lumen Storefront", client: "Lumen Retail", service: "web_dev", status: "active", value: 60_000, overhead: 0, since: 22, teamCost: 16_000, progress: 22 },
-    { name: "Cobalt Brand System", client: "Cobalt Health", service: "design", status: "delivered", value: 64_000, overhead: 0, since: 130, teamCost: 30_000, progress: 100 },
+    { name: "Kirana Fresh Rebrand", client: "Kirana Fresh", service: "design", status: "active", value: 84_000, overhead: 0, since: 74, teamCost: 30_000, progress: 62 },
+    { name: "Surya Labs App Launch", client: "Surya Labs", service: "web_dev", status: "active", value: 145_000, overhead: 7_000, since: 74, teamCost: 47_000, progress: 48 },
+    { name: "Bhoomi Storefront", client: "Bhoomi & Co.", service: "web_dev", status: "active", value: 32_000, overhead: 0, since: 74, teamCost: 18_000, progress: 70, bigExpense: 7_000 },
+    { name: "Chitra Site Refresh", client: "Chitra Studio", service: "web_dev", status: "active", value: 41_000, overhead: 0, since: 62, teamCost: 15_000, progress: 55 },
+    { name: "Sankalp Campaign", client: "Sankalp Group", service: "marketing", status: "active", value: 52_000, overhead: 0, since: 55, teamCost: 21_000, progress: 44 },
+    { name: "Disha Advisory Portal", client: "Disha Advisory", service: "consulting", status: "active", value: 33_000, overhead: 0, since: 40, teamCost: 13_000, progress: 38 },
+    { name: "Deepam Storefront", client: "Deepam Retail", service: "web_dev", status: "active", value: 60_000, overhead: 0, since: 22, teamCost: 16_000, progress: 22 },
+    { name: "Arogya Brand System", client: "Arogya Health", service: "design", status: "delivered", value: 64_000, overhead: 0, since: 130, teamCost: 30_000, progress: 100 },
   ];
 
   const projects = await Promise.all(
@@ -201,9 +206,9 @@ async function main() {
           name: p.name,
           status: p.status,
           serviceType: p.service,
-          contractValue: D(p.value),
-          teamCost: D(p.teamCost),
-          allocatedOverhead: D(p.overhead),
+          contractValue: money(p.value),
+          teamCost: money(p.teamCost),
+          allocatedOverhead: money(p.overhead),
           startDate: day(-p.since),
           deadline: day(p.status === "delivered" ? -10 : 55 - p.since / 2),
           progressPercentage: p.progress,
@@ -223,7 +228,7 @@ async function main() {
       expenseRows.push({
         projectId: proj.id,
         category: cats[k],
-        amount: D(320 + ((idx + k) % 4) * 260), // 320..1100
+        amount: money(320 + ((idx + k) % 4) * 260), // ~₹12.8k..44k
         description: `${cats[k]} — ${proj.name}`,
         dateIncurred: day(-back),
         createdBy: primaryUserId,
@@ -233,7 +238,7 @@ async function main() {
       expenseRows.push({
         projectId: proj.id,
         category: "freelance",
-        amount: D(spec.bigExpense),
+        amount: money(spec.bigExpense),
         description: `Contract build help — ${proj.name}`,
         dateIncurred: day(-19),
         createdBy: primaryUserId,
@@ -245,8 +250,8 @@ async function main() {
   const yr = new Date().getFullYear();
   let seq = 20;
   const invNo = () => `INV-${yr}-${String(seq++).padStart(3, "0")}`;
-  const helio = projects.find((p) => p.name === "Helio App Launch")!;
-  const northwind = projects.find((p) => p.name === "Northwind Rebrand")!;
+  const helio = projects.find((p) => p.name === "Surya Labs App Launch")!;
+  const northwind = projects.find((p) => p.name === "Kirana Fresh Rebrand")!;
 
   async function paidInvoice(project: { id: string; clientId: string }, amount: number, back: number) {
     const inv = await prisma.invoice.create({
@@ -255,7 +260,7 @@ async function main() {
         clientId: project.clientId,
         projectId: project.id,
         invoiceNumber: invNo(),
-        amount: D(amount),
+        amount: money(amount),
         status: "paid",
         issueDate: day(-back - 6),
         dueDate: day(-back + 3),
@@ -267,7 +272,7 @@ async function main() {
     await prisma.payment.create({
       data: {
         invoiceId: inv.id,
-        amount: D(amount),
+        amount: money(amount),
         paymentDate: day(-back),
         paymentMethod: back % 2 ? "card" : "bank_transfer",
         recordedBy: primaryUserId,
@@ -278,10 +283,10 @@ async function main() {
   // Historical milestone payments — build lifetime revenue + the MoM baseline
   // (two land in the first days of last month), none inside the 30-day chart.
   await paidInvoice(helio, 41_000, 62);
-  await paidInvoice(projects.find((p) => p.name === "Cobalt Brand System")!, 34_000, 50);
+  await paidInvoice(projects.find((p) => p.name === "Arogya Brand System")!, 34_000, 50);
   // two land in the first days of last month -> the MoM comparison baseline
   await paidInvoice(northwind, 27_000, 37);
-  await paidInvoice(projects.find((p) => p.name === "Vector Site Refresh")!, 30_000, 34);
+  await paidInvoice(projects.find((p) => p.name === "Chitra Site Refresh")!, 30_000, 34);
 
   // Progress payments every ~2.5 days across the 30-day window -> the revenue
   // curve on the profit chart, plus a believable month-to-date figure.
@@ -296,11 +301,11 @@ async function main() {
   // Open receivables — created last so they're the "recent" rows in the table.
   const open: [string, number, number, number, string][] = [
     // project, amount, issuedBack, dueBack, status
-    ["Meridian Campaign", 18_000, 10, -18, "sent"],
-    ["Lumen Storefront", 12_500, 3, -27, "draft"],
-    ["Helio App Launch", 24_000, 7, -21, "sent"],
-    ["Acre Storefront", 9_800, 54, 39, "sent"], // overdue >30d
-    ["Brightpath Advisory", 14_500, 46, 34, "sent"], // overdue >30d
+    ["Sankalp Campaign", 18_000, 10, -18, "sent"],
+    ["Deepam Storefront", 12_500, 3, -27, "draft"],
+    ["Surya Labs App Launch", 24_000, 7, -21, "sent"],
+    ["Bhoomi Storefront", 9_800, 54, 39, "sent"], // overdue >30d
+    ["Disha Advisory Portal", 14_500, 46, 34, "sent"], // overdue >30d
   ];
   for (const [name, amount, issued, due, status] of open) {
     const proj = projects.find((p) => p.name === name)!;
@@ -310,7 +315,7 @@ async function main() {
         clientId: proj.clientId,
         projectId: proj.id,
         invoiceNumber: invNo(),
-        amount: D(amount),
+        amount: money(amount),
         status,
         issueDate: day(-issued),
         dueDate: day(-due),

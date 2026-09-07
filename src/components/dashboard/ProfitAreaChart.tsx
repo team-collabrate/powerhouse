@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { ProfitSeriesView } from "@/lib/dashboard-types";
+import { formatCurrency } from "@/lib/format";
 
 const W = 720;
 const H = 240;
@@ -39,8 +40,13 @@ export function ProfitAreaChart({ series }: { series: ProfitSeriesView }) {
     setHover(Math.max(0, Math.min(n - 1, idx)));
   }
 
-  const kfmt = (v: number) =>
-    v === 0 ? "0" : v >= 1000 ? `${Math.round(v / 100) / 10}k` : String(Math.round(v));
+  const kfmt = (v: number) => {
+    if (v === 0) return "0";
+    if (v >= 1e7) return `${Math.round(v / 1e6) / 10}Cr`;
+    if (v >= 1e5) return `${Math.round(v / 1e4) / 10}L`;
+    if (v >= 1000) return `${Math.round(v / 100) / 10}k`;
+    return String(Math.round(v));
+  };
 
   return (
     <div className="px-5 pb-5 pt-4">
@@ -205,7 +211,7 @@ function Row({
       <span
         className={`tnum ml-auto ${strong ? "font-semibold text-ink" : "text-ink-2"}`}
       >
-        ${value.toLocaleString()}
+        {formatCurrency(value)}
       </span>
     </div>
   );
