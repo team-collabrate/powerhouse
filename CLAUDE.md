@@ -162,13 +162,13 @@ dropdown). Not shown for `client` role.
 
 ## Perf / caching
 
-Vercel runs in `iad1`; Supabase is `ap-southeast-1` (Singapore) → ~500ms
-per query. Mitigations in `src/lib/cache.ts`: `getDashboardData`,
-`getAnalytics`, `getNotifications` are wrapped in `unstable_cache` (45–60s)
-tagged `agency-data`; `logActivity()` → `bustAgencyData()` drops that tag
-on every write. `getSessionContext` and `resolveAgencyOverhead` are
-wrapped in React `cache()` for per-request dedup. Real fix is co-locating
-the DB — still pending.
+Vercel functions run in Singapore (`sin1`), co-located with the Supabase
+`ap-southeast-1` DB — queries are ~5ms, not ~250ms (a single-query page
+dropped from ~1.5s to ~0.25s). On top of that, `src/lib/cache.ts` wraps
+`getDashboardData`, `getAnalytics`, `getNotifications` in `unstable_cache`
+(45–60s) tagged `agency-data`; `logActivity()` → `bustAgencyData()` drops
+that tag on every write. `getSessionContext` and `resolveAgencyOverhead`
+are wrapped in React `cache()` for per-request dedup.
 
 ## Auth pages
 
@@ -199,11 +199,11 @@ Indian: ₹ figures (`formatCurrency` = INR/en-IN), Indian client/team names,
 Done: Sprint 1 auth · dashboard · Projects · Expenses · Invoices+payments ·
 RLS+roles · Clients · Settings · Analytics · Client portal · Invoice email ·
 CI · team invites · overhead→project allocation · milestones CRUD ·
-forgot/reset-password · printable invoice PDF · deployed to Vercel
-(powerhouse-co.vercel.app).
+forgot/reset-password · printable invoice PDF · notifications bell ·
+global search · activity feed · account page · first-run state · caching ·
+DB co-located in Singapore · deployed to Vercel (powerhouse-co.vercel.app).
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: notifications (overdue reminders) · first-run empty states ·
-portal "pay now" · DB region co-location (Vercel iad1 ↔ Supabase Singapore).
+Next: portal "pay now" is parked (payments handled outside the app).
 
 ### Client portal + invoice email
 
