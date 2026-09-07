@@ -171,7 +171,7 @@ export async function getClient(
       },
     },
     }),
-    resolveAgencyOverhead(agencyId, { now }),
+    resolveAgencyOverhead(agencyId),
   ]);
   if (!c) return null;
 

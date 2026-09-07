@@ -107,7 +107,7 @@ async function fetchAnalytics(
         projectExpenses: { select: { amount: true } },
       },
     }),
-    resolveAgencyOverhead(agencyId, { now }),
+    resolveAgencyOverhead(agencyId),
   ]);
 
   const spanYears = from.getFullYear() !== now.getFullYear();

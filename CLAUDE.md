@@ -136,6 +136,25 @@ Milestones (`MilestonesCard` + `MilestoneDialog` on the detail page):
 (gated `project:write`). Statuses pending / in_progress / completed
 (`queries/milestones.ts`); moving to "completed" stamps `completedDate`.
 
+## Notifications
+
+`getNotifications(agencyId)` (`queries/notifications.ts`, cached with the
+`agency-data` tag) computes "needs attention" items from current data — no
+table: overdue invoices, invoices due ≤ 5 days, active projects under 15 %
+margin, projects past deadline. The layout passes it to
+`<Header>` → `<NotificationsBell>` (bell + high-severity count badge,
+dropdown). Not shown for `client` role.
+
+## Perf / caching
+
+Vercel runs in `iad1`; Supabase is `ap-southeast-1` (Singapore) → ~500ms
+per query. Mitigations in `src/lib/cache.ts`: `getDashboardData`,
+`getAnalytics`, `getNotifications` are wrapped in `unstable_cache` (45–60s)
+tagged `agency-data`; `logActivity()` → `bustAgencyData()` drops that tag
+on every write. `getSessionContext` and `resolveAgencyOverhead` are
+wrapped in React `cache()` for per-request dedup. Real fix is co-locating
+the DB — still pending.
+
 ## Auth pages
 
 `(auth)` route group: `/login`, `/signup`, `/forgot-password`,

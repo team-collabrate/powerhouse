@@ -422,7 +422,7 @@ async function fetchDashboardData(agencyId: string): Promise<DashboardView> {
       where: { id: agencyId },
       select: { monthlyRevenueTarget: true },
     }),
-    resolveAgencyOverhead(agencyId, { now }),
+    resolveAgencyOverhead(agencyId),
   ]);
 
   return buildDashboardView({

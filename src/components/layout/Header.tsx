@@ -1,11 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, Search } from "react-feather";
+import { LogOut, Search } from "react-feather";
 import { createClient } from "@/lib/supabase/client";
 import { MobileNav } from "./MobileNav";
+import { NotificationsBell } from "./NotificationsBell";
+import type { NotificationsData } from "@/lib/queries/notifications";
 
-export function Header({ userEmail }: { userEmail?: string | null }) {
+export function Header({
+  userEmail,
+  notifications,
+}: {
+  userEmail?: string | null;
+  notifications: NotificationsData;
+}) {
   const router = useRouter();
 
   async function signOut() {
@@ -36,13 +44,7 @@ export function Header({ userEmail }: { userEmail?: string | null }) {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <button
-          aria-label="Notifications"
-          className="relative grid h-9 w-9 place-items-center rounded-[var(--radius-sm)] border border-hairline bg-surface text-ink-2 transition-colors hover:bg-surface-sunken"
-        >
-          <Bell size={16} />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-accent" />
-        </button>
+        <NotificationsBell data={notifications} />
 
         <button
           onClick={signOut}

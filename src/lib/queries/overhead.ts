@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import {
   allocateOverhead,
@@ -33,11 +34,10 @@ const NO_OP: OverheadResolver = {
  * /projects/[id]) have no demo fallback, so a failure returns a no-op
  * resolver (behaves exactly like method = "manual").
  */
-export async function resolveAgencyOverhead(
+export const resolveAgencyOverhead = cache(async function resolveAgencyOverhead(
   agencyId: string,
-  opts?: { now?: Date },
 ): Promise<OverheadResolver> {
-  const now = opts?.now ?? new Date();
+  const now = new Date();
   try {
     const [agency, expenses, portfolio] = await Promise.all([
       prisma.agency.findUnique({
@@ -103,4 +103,4 @@ export async function resolveAgencyOverhead(
     console.error("resolveAgencyOverhead failed", err);
     return NO_OP;
   }
-}
+});

@@ -3,6 +3,8 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { getSessionContext } from "@/lib/session";
+import { getNotifications } from "@/lib/queries/notifications";
+import type { NotificationsData } from "@/lib/queries/notifications";
 
 export default async function DashboardLayout({
   children,
@@ -16,6 +18,7 @@ export default async function DashboardLayout({
   let role = "admin"; // demo mode
   let fullName = "Demo User";
   let email: string | undefined;
+  let notifications: NotificationsData = { items: [], count: 0 };
 
   if (configured) {
     const ctx = await getSessionContext();
@@ -23,6 +26,12 @@ export default async function DashboardLayout({
     role = ctx.role;
     fullName = ctx.fullName;
     email = ctx.email;
+    if (role !== "client") {
+      notifications = await getNotifications(ctx.agencyId).catch(() => ({
+        items: [],
+        count: 0,
+      }));
+    }
   }
 
   return (
@@ -30,7 +39,7 @@ export default async function DashboardLayout({
       <div className="min-h-screen bg-surface-sunken">
         <Sidebar name={fullName} role={role} />
         <div className="lg:pl-[248px]">
-          <Header userEmail={email} />
+          <Header userEmail={email} notifications={notifications} />
           <main className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-6">
             {role === "client" ? (
               <div className="rounded-[var(--radius-md)] border border-hairline bg-surface-raised p-10 text-center">
