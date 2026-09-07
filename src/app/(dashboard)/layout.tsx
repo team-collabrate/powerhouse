@@ -16,6 +16,7 @@ export default async function DashboardLayout({
 
   let user: { email?: string } | null = null;
   let role = "admin"; // demo mode
+  let fullName = "Demo User";
 
   if (configured) {
     const supabase = await createClient();
@@ -25,12 +26,13 @@ export default async function DashboardLayout({
     if (!user) redirect("/login");
     const ctx = await getSessionContext();
     role = ctx?.role ?? "client";
+    fullName = ctx?.fullName ?? user.email ?? "Account";
   }
 
   return (
     <SessionProvider role={role}>
       <div className="min-h-screen bg-surface-sunken">
-        <Sidebar />
+        <Sidebar name={fullName} role={role} />
         <div className="lg:pl-[248px]">
           <Header userEmail={user?.email} />
           <main className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-6">

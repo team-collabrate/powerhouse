@@ -4,9 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronsLeft, ChevronDown } from "react-feather";
 import { cn } from "@/lib/utils";
+import { ROLE_LABELS, type Role } from "@/lib/permissions";
 import { NAV } from "./nav-items";
 
-export function Sidebar() {
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+export function Sidebar({ name, role }: { name: string; role: string }) {
   const pathname = usePathname();
 
   return (
@@ -55,13 +63,15 @@ export function Sidebar() {
 
       <button className="mt-3 flex items-center gap-2.5 rounded-[var(--radius-sm)] px-2 py-2 text-left transition-colors hover:bg-surface/70">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-strong">
-          BF
+          {initials(name)}
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13px] font-medium text-ink">
-            Bella Ford
+            {name}
           </span>
-          <span className="block text-[11px] text-ink-3">Pro Plan</span>
+          <span className="block text-[11px] text-ink-3">
+            {ROLE_LABELS[role as Role] ?? role}
+          </span>
         </span>
         <ChevronDown size={15} className="text-ink-3" />
       </button>
