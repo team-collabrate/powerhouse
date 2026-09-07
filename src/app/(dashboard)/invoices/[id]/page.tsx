@@ -35,15 +35,25 @@ export default async function InvoiceDetailPage({
           <ArrowLeft size={14} />
           Invoices
         </Link>
-        <a
-          href={`/print/invoice/${id}`}
-          target="_blank"
-          rel="noopener"
-          className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink-3 hover:text-ink-2"
-        >
-          <FileText size={14} />
-          PDF
-        </a>
+        <div className="flex items-center gap-3">
+          <a
+            href={`/print/invoice/${id}`}
+            target="_blank"
+            rel="noopener"
+            className="text-[12.5px] font-medium text-ink-3 hover:text-ink-2"
+          >
+            Print view
+          </a>
+          <a
+            href={`/api/invoices/${id}/pdf`}
+            target="_blank"
+            rel="noopener"
+            className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink-3 hover:text-ink-2"
+          >
+            <FileText size={14} />
+            PDF
+          </a>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-start justify-between gap-3">

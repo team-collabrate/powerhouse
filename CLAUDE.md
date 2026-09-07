@@ -276,9 +276,19 @@ left, live `<InvoiceDocument>` preview on the right; "Save & send" saves
 then hits `/send`. `PATCH /api/invoices/[id]` branches on `body.lineItems`:
 present → full editor save (draft only, replaces items, recomputes amount);
 absent → light edit (due date / notes, any non-cancelled status).
-Printable / PDF at `/print/invoice/[id]` shares `<InvoiceDocument>`.
 Migration `20260908120000_invoice_line_items` backfills one line item per
-existing invoice. `src/lib/invoice-sync.ts` keeps the stored `status`
+existing invoice.
+
+**PDF**: `renderInvoicePdf(printData)` in `src/lib/invoice-pdf.tsx`
+(`@react-pdf/renderer`, bundled Roboto in `src/assets/fonts/` — currency is
+`"Rs. 1,23,456"`, that font has no ₹ glyph; `next.config.ts`
+`outputFileTracingIncludes` bundles the fonts into `/api/invoices/**`).
+`GET /api/invoices/[id]/pdf` streams it (`inline`); "Send" renders it and
+attaches it to the Resend email (best-effort — a render failure still
+sends with the portal link). `/print/invoice/[id]` is the HTML/OS-print
+view, shares `<InvoiceDocument>`. `@react-pdf` doesn't import under `tsx`
+(hyphenate subpath) so it's not in `smoke:live` — verify PDFs by hitting
+the route. `src/lib/invoice-sync.ts` keeps the stored `status`
 in step with payments; `src/lib/invoice-status.ts` `displayInvoiceStatus()`
 is the single source of truth for the badge (draft/sent/partial/overdue/
 paid/cancelled) and is used by the dashboard, project detail, and invoice

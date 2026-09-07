@@ -4,7 +4,12 @@ import { ok, fail, requireCapability } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { generatePortalToken } from "@/lib/portal";
 import { sendInvoiceEmail, appUrl } from "@/lib/email";
+import { getInvoicePrintData } from "@/lib/queries/invoices";
+import { renderInvoicePdf } from "@/lib/invoice-pdf";
 import { formatCurrency, formatDate } from "@/lib/format";
+
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -29,6 +34,8 @@ export async function POST(_request: Request, { params }: Params) {
   if (!inv) return fail("NOT_FOUND", "Invoice not found", 404);
   if (inv.status !== "draft")
     return fail("INVALID_STATE", `Invoice is already ${inv.status}`, 409);
+  if (Number(inv.amount) <= 0)
+    return fail("EMPTY_INVOICE", "Add line items and a total before sending", 409);
 
   // ensure the client has a portal link so the email has somewhere to point
   let token = inv.client.portalToken;
@@ -45,6 +52,21 @@ export async function POST(_request: Request, { params }: Params) {
     data: { status: "sent", sentDate: new Date() },
   });
 
+  // Render the PDF to attach. Best-effort — a render failure still sends the
+  // email (with the portal link) rather than blocking the whole action.
+  let pdf: { filename: string; content: Buffer } | undefined;
+  try {
+    const printData = await getInvoicePrintData(auth.agencyId, id);
+    if (printData) {
+      pdf = {
+        filename: `${inv.invoiceNumber}.pdf`,
+        content: await renderInvoicePdf(printData),
+      };
+    }
+  } catch (err) {
+    console.error("invoice PDF render failed", err);
+  }
+
   const email = await sendInvoiceEmail({
     to: inv.client.email,
     agencyName: inv.agency.name,
@@ -52,6 +74,7 @@ export async function POST(_request: Request, { params }: Params) {
     amount: formatCurrency(Number(inv.amount)),
     dueDate: formatDate(inv.dueDate),
     portalUrl: `${appUrl}/portal/${token}`,
+    pdf,
   });
 
   await logActivity({

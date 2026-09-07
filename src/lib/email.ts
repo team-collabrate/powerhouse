@@ -26,6 +26,8 @@ export async function sendInvoiceEmail(p: {
   amount: string;
   dueDate: string;
   portalUrl: string;
+  /** the rendered invoice PDF, attached to the email */
+  pdf?: { filename: string; content: Buffer };
 }): Promise<SendResult> {
   if (!resend) {
     return {
@@ -59,6 +61,9 @@ export async function sendInvoiceEmail(p: {
       to: p.to,
       subject: `Invoice ${p.invoiceNumber} from ${p.agencyName}`,
       html,
+      ...(p.pdf
+        ? { attachments: [{ filename: p.pdf.filename, content: p.pdf.content }] }
+        : {}),
     });
     if (error) {
       return { delivered: false, note: `Sent, but the email failed: ${error.message}` };
