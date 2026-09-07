@@ -93,6 +93,8 @@ export interface DashboardView {
   insights: InsightView[];
   /** true when served from static placeholder data (no DB / no rows yet) */
   isDemo: boolean;
+  /** true when the agency exists but has no projects or invoices yet */
+  isEmpty: boolean;
 }
 
 export const SERVICE_LABELS: Record<string, string> = {

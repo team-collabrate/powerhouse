@@ -29,6 +29,7 @@ const points: ProfitPoint[] = dayLabels.map((label, i) => ({
 export const DEMO_DASHBOARD: DashboardView = {
   greetingName: "there",
   isDemo: true,
+  isEmpty: false,
   kpis: [
     {
       id: "revenue",

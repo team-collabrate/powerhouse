@@ -11,6 +11,7 @@ import { TopProjects } from "@/components/dashboard/TopProjects";
 import { ClientGrowthBars } from "@/components/dashboard/ClientGrowthBars";
 import { RecentInvoices } from "@/components/dashboard/RecentInvoices";
 import { InsightsCard } from "@/components/dashboard/InsightsCard";
+import { FirstRun } from "@/components/dashboard/FirstRun";
 import { NewProjectButton } from "@/components/projects/NewProjectButton";
 import { NewInvoiceButton } from "@/components/invoices/NewInvoiceButton";
 import { invoiceableProjects } from "@/lib/queries/invoices";
@@ -46,6 +47,10 @@ export default async function DashboardPage() {
     } catch (err) {
       console.error("dashboard query failed, falling back to demo data", err);
     }
+  }
+
+  if (view.isEmpty) {
+    return <FirstRun name={view.greetingName} />;
   }
 
   return (

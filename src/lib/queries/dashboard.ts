@@ -341,6 +341,7 @@ export function buildDashboardView(input: DashInputs): DashboardView {
   return {
     greetingName,
     isDemo: false,
+    isEmpty: projects.length === 0 && invoices.length === 0,
     kpis,
     profit: { points, yMax, tickIndices: [0, 2, 4, 6, 8, 10, 11] },
     services,
