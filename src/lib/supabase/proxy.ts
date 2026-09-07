@@ -47,7 +47,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublic) {
+  // A password-recovery link signs the user in with a temporary session, so
+  // don't bounce them off /reset-password before they've set a new password.
+  if (user && isPublic && !pathname.startsWith("/reset-password")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

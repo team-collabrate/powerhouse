@@ -2,40 +2,54 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 
-export default function LoginPage() {
-  const router = useRouter();
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const { error } = await createClient().auth.signInWithPassword({
-      email,
-      password,
+    const { error } = await createClient().auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
     if (error) {
       setError(error.message);
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <>
+        <h1 className="text-lg font-semibold text-ink">Check your email</h1>
+        <p className="mt-2 text-sm text-ink-2">
+          If an account exists for <strong>{email}</strong>, we&apos;ve sent a
+          link to reset your password. It expires in an hour.
+        </p>
+        <Link
+          href="/login"
+          className="mt-4 inline-block text-sm font-medium text-accent"
+        >
+          Back to sign in
+        </Link>
+      </>
+    );
   }
 
   return (
     <>
-      <h1 className="text-lg font-semibold text-ink">Sign in</h1>
+      <h1 className="text-lg font-semibold text-ink">Reset your password</h1>
       <p className="mt-1 text-sm text-ink-2">
-        Welcome back to your dashboard.
+        Enter your email and we&apos;ll send you a reset link.
       </p>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
@@ -46,31 +60,16 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <Field
-          label="Password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <div className="text-right">
-          <Link
-            href="/forgot-password"
-            className="text-xs font-medium text-ink-3 hover:text-accent"
-          >
-            Forgot password?
-          </Link>
-        </div>
         {error && <p className="text-xs text-loss">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in…" : "Sign in"}
+          {loading ? "Sending…" : "Send reset link"}
         </Button>
       </form>
 
       <p className="mt-4 text-sm text-ink-2">
-        No account?{" "}
-        <Link href="/signup" className="font-medium text-accent">
-          Create one
+        Remembered it?{" "}
+        <Link href="/login" className="font-medium text-accent">
+          Sign in
         </Link>
       </p>
     </>
