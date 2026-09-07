@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronsLeft, ChevronDown } from "react-feather";
+import { ChevronsLeft, ChevronRight } from "react-feather";
 import { cn } from "@/lib/utils";
 import { ROLE_LABELS, type Role } from "@/lib/permissions";
 import { NAV } from "./nav-items";
@@ -61,7 +61,13 @@ export function Sidebar({ name, role }: { name: string; role: string }) {
         })}
       </nav>
 
-      <button className="mt-3 flex items-center gap-2.5 rounded-[var(--radius-sm)] px-2 py-2 text-left transition-colors hover:bg-surface/70">
+      <Link
+        href="/account"
+        className={cn(
+          "mt-3 flex items-center gap-2.5 rounded-[var(--radius-sm)] px-2 py-2 text-left transition-colors hover:bg-surface/70",
+          pathname === "/account" && "bg-surface",
+        )}
+      >
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-strong">
           {initials(name)}
         </span>
@@ -73,8 +79,8 @@ export function Sidebar({ name, role }: { name: string; role: string }) {
             {ROLE_LABELS[role as Role] ?? role}
           </span>
         </span>
-        <ChevronDown size={15} className="text-ink-3" />
-      </button>
+        <ChevronRight size={15} className="text-ink-3" />
+      </Link>
     </aside>
   );
 }
