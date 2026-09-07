@@ -372,7 +372,9 @@ const getDashboardDataCached = cacheAgencyRead(
   45,
 );
 
-async function fetchDashboardData(agencyId: string): Promise<DashboardView> {
+export async function fetchDashboardData(
+  agencyId: string,
+): Promise<DashboardView> {
   const now = new Date();
   // fetch payments back to the start of last month so month-over-month works
   const paymentsSince = new Date(now.getFullYear(), now.getMonth() - 1, 1);

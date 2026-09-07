@@ -71,7 +71,7 @@ export const getAnalytics = cacheAgencyRead(
   60,
 );
 
-async function fetchAnalytics(
+export async function fetchAnalytics(
   agencyId: string,
   months: AnalyticsPeriod,
 ): Promise<AnalyticsResult> {
