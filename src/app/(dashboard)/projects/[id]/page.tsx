@@ -10,6 +10,7 @@ import { ProjectStatusBadge } from "@/components/projects/ProjectStatusBadge";
 import { EditProjectButton } from "@/components/projects/EditProjectButton";
 import { CloseProjectButton } from "@/components/projects/CloseProjectButton";
 import { ProjectExpensesCard } from "@/components/expenses/ProjectExpensesCard";
+import { MilestonesCard } from "@/components/projects/MilestonesCard";
 import { displayInvoiceStatus } from "@/lib/invoice-status";
 
 export const dynamic = "force-dynamic";
@@ -120,28 +121,7 @@ export default async function ProjectDetailPage({
           expenses={p.expenses}
         />
 
-        {/* Milestones */}
-        <Card>
-          <CardHeader title="Milestones" menu={false} />
-          {p.milestones.length === 0 ? (
-            <Empty text="No milestones." />
-          ) : (
-            <ul className="px-5 py-3">
-              {p.milestones.map((m) => (
-                <li
-                  key={m.id}
-                  className="flex items-center justify-between border-b border-hairline py-2.5 text-[13px] last:border-0"
-                >
-                  <span className="text-ink">{m.name}</span>
-                  <span className="flex items-center gap-3 text-ink-3">
-                    <span className="text-[12px]">{formatDate(m.dueDate)}</span>
-                    <span className="text-[11px] capitalize">{m.status}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        <MilestonesCard projectId={p.id} milestones={p.milestones} />
 
         {/* Invoices */}
         <Card>

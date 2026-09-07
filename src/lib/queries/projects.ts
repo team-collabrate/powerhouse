@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { calculateProjectProfit } from "@/lib/profit";
 import { resolveAgencyOverhead } from "@/lib/queries/overhead";
+import type { MilestoneRow, MilestoneStatus } from "@/lib/queries/milestones";
 
 const num = (d: unknown): number => (d == null ? 0 : Number(d));
 
@@ -151,12 +152,7 @@ export interface ProjectDetail {
     dateIncurred: string;
     receiptUrl: string | null;
   }[];
-  milestones: {
-    id: string;
-    name: string;
-    status: string;
-    dueDate: string;
-  }[];
+  milestones: MilestoneRow[];
   invoices: {
     id: string;
     invoiceNumber: string;
@@ -202,7 +198,14 @@ export async function getProject(
       },
       milestones: {
         orderBy: { dueDate: "asc" },
-        select: { id: true, name: true, status: true, dueDate: true },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          status: true,
+          dueDate: true,
+          completedDate: true,
+        },
       },
       invoices: {
         orderBy: { createdAt: "desc" },
@@ -273,8 +276,10 @@ export async function getProject(
     milestones: p.milestones.map((m) => ({
       id: m.id,
       name: m.name,
-      status: m.status,
+      description: m.description,
+      status: m.status as MilestoneStatus,
       dueDate: m.dueDate.toISOString(),
+      completedDate: m.completedDate ? m.completedDate.toISOString() : null,
     })),
     invoices: p.invoices.map((i) => ({
       id: i.id,
