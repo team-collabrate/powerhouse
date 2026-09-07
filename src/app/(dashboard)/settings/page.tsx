@@ -9,6 +9,7 @@ import {
 import { Card, CardHeader } from "@/components/dashboard/Card";
 import { AgencySettingsForm } from "@/components/settings/AgencySettingsForm";
 import { CompanyExpensesCard } from "@/components/settings/CompanyExpensesCard";
+import { OverheadAllocationCard } from "@/components/settings/OverheadAllocationCard";
 import { TeamCard } from "@/components/settings/TeamCard";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +62,14 @@ export default async function SettingsPage() {
       )}
 
       <CompanyExpensesCard data={overhead} />
+
+      {settings && (
+        <OverheadAllocationCard
+          method={settings.overheadMethod}
+          ratePct={settings.overheadRatePct}
+          monthlyPool={overhead.monthlyPool}
+        />
+      )}
 
       <TeamCard members={team} invites={invites} />
     </div>

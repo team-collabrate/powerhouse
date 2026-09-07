@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { ROLE_LABELS, type Role } from "@/lib/permissions";
+import {
+  overheadMonthlyPool,
+  OVERHEAD_METHODS,
+  type OverheadMethod,
+} from "@/lib/overhead";
 
 const num = (d: unknown): number => (d == null ? 0 : Number(d));
 
@@ -9,6 +14,8 @@ export interface AgencySettings {
   logoUrl: string | null;
   brandColor: string;
   monthlyRevenueTarget: number;
+  overheadMethod: OverheadMethod;
+  overheadRatePct: number; // 0..100 for the UI
 }
 
 export async function getAgencySettings(
@@ -22,15 +29,22 @@ export async function getAgencySettings(
       logoUrl: true,
       brandColor: true,
       monthlyRevenueTarget: true,
+      overheadMethod: true,
+      overheadRate: true,
     },
   });
   if (!a) return null;
+  const method = OVERHEAD_METHODS.includes(a.overheadMethod as OverheadMethod)
+    ? (a.overheadMethod as OverheadMethod)
+    : "manual";
   return {
     id: a.id,
     name: a.name,
     logoUrl: a.logoUrl,
     brandColor: a.brandColor,
     monthlyRevenueTarget: num(a.monthlyRevenueTarget),
+    overheadMethod: method,
+    overheadRatePct: num(a.overheadRate) * 100,
   };
 }
 
@@ -80,6 +94,8 @@ export interface CompanyExpenseListResult {
   monthlyRecurring: number;
   /** total booked in the trailing calendar month */
   lastMonthTotal: number;
+  /** the pool the overhead allocation rule distributes: recurring run-rate + trailing-90d one-offs / 3 */
+  monthlyPool: number;
 }
 
 const perMonth: Record<RecurringFrequency, number> = {
@@ -127,7 +143,17 @@ export async function listCompanyExpenses(
     .filter((r) => r.dateIncurred >= monthStart && r.dateIncurred < monthEnd)
     .reduce((s, r) => s + num(r.amount), 0);
 
-  return { items, monthlyRecurring, lastMonthTotal };
+  const monthlyPool = overheadMonthlyPool(
+    rows.map((r) => ({
+      amount: num(r.amount),
+      dateIncurred: r.dateIncurred,
+      isRecurring: r.isRecurring,
+      recurringFrequency: r.recurringFrequency,
+    })),
+    now,
+  );
+
+  return { items, monthlyRecurring, lastMonthTotal, monthlyPool };
 }
 
 export interface TeamMember {

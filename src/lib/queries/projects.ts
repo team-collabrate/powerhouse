@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { calculateProjectProfit } from "@/lib/profit";
+import { resolveAgencyOverhead } from "@/lib/queries/overhead";
 
 const num = (d: unknown): number => (d == null ? 0 : Number(d));
 
@@ -56,29 +57,32 @@ export async function listProjects(
   agencyId: string,
   filters: ProjectFilters = {},
 ): Promise<ProjectListResult> {
-  const rows = await prisma.project.findMany({
-    where: { agencyId },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      status: true,
-      serviceType: true,
-      contractValue: true,
-      teamCost: true,
-      allocatedOverhead: true,
-      progressPercentage: true,
-      deadline: true,
-      client: { select: { name: true } },
-      projectExpenses: { select: { amount: true } },
-    },
-  });
+  const [rows, overhead] = await Promise.all([
+    prisma.project.findMany({
+      where: { agencyId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        serviceType: true,
+        contractValue: true,
+        teamCost: true,
+        allocatedOverhead: true,
+        progressPercentage: true,
+        deadline: true,
+        client: { select: { name: true } },
+        projectExpenses: { select: { amount: true } },
+      },
+    }),
+    resolveAgencyOverhead(agencyId),
+  ]);
 
   const all: ProjectListItem[] = rows.map((p) => {
     const profit = calculateProjectProfit({
       contractValue: num(p.contractValue),
       teamCost: num(p.teamCost),
-      allocatedOverhead: num(p.allocatedOverhead),
+      allocatedOverhead: overhead.overheadFor(p.id),
       expenses: p.projectExpenses.map((e) => ({ amount: num(e.amount) })),
     });
     return {
@@ -134,6 +138,7 @@ export interface ProjectDetail {
     teamCost: number;
     expenses: number;
     overhead: number;
+    overheadSource: "pinned" | "rule" | "none";
     total: number;
     profit: number;
     profitMargin: number;
@@ -166,7 +171,8 @@ export async function getProject(
   agencyId: string,
   id: string,
 ): Promise<ProjectDetail | null> {
-  const p = await prisma.project.findFirst({
+  const [p, overhead] = await Promise.all([
+    prisma.project.findFirst({
     where: { id, agencyId },
     select: {
       id: true,
@@ -210,8 +216,18 @@ export async function getProject(
         },
       },
     },
-  });
+    }),
+    resolveAgencyOverhead(agencyId),
+  ]);
   if (!p) return null;
+
+  const allocatedOverhead = overhead.overheadFor(p.id);
+  const overheadSource: "pinned" | "rule" | "none" =
+    num(p.allocatedOverhead) > 0
+      ? "pinned"
+      : overhead.method === "manual"
+        ? "none"
+        : "rule";
 
   const expenses = p.projectExpenses.map((e) => ({
     id: e.id,
@@ -225,7 +241,7 @@ export async function getProject(
   const profit = calculateProjectProfit({
     contractValue: num(p.contractValue),
     teamCost: num(p.teamCost),
-    allocatedOverhead: num(p.allocatedOverhead),
+    allocatedOverhead,
     expenses: expenses.map((e) => ({ amount: e.amount })),
   });
 
@@ -247,7 +263,8 @@ export async function getProject(
     cost: {
       teamCost: profit.totalTeamCost,
       expenses: profit.totalExpenses,
-      overhead: num(p.allocatedOverhead),
+      overhead: allocatedOverhead,
+      overheadSource,
       total: profit.totalCost,
       profit: profit.profit,
       profitMargin: profit.profitMargin,

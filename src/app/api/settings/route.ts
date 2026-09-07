@@ -31,6 +31,12 @@ export async function PATCH(request: Request) {
       ...(d.monthlyRevenueTarget !== undefined && {
         monthlyRevenueTarget: d.monthlyRevenueTarget,
       }),
+      ...(d.overheadMethod !== undefined && {
+        overheadMethod: d.overheadMethod,
+      }),
+      ...(d.overheadRatePct !== undefined && {
+        overheadRate: d.overheadRatePct / 100,
+      }),
     },
   });
 

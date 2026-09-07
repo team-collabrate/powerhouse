@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { calculateProjectProfit } from "@/lib/profit";
+import { resolveAgencyOverhead } from "@/lib/queries/overhead";
+import type { OverheadMethod } from "@/lib/overhead";
 import {
   SERVICE_TYPE_LABELS,
   type ProjectStatus,
@@ -44,6 +46,11 @@ export interface AnalyticsResult {
   };
   serviceMix: { label: string; value: number; amount: number }[];
   projects: ProfitabilityRow[];
+  overhead: {
+    method: OverheadMethod;
+    methodLabel: string;
+    monthlyPool: number;
+  };
 }
 
 function monthLabel(d: Date, spanYears: boolean) {
@@ -60,7 +67,8 @@ export async function getAnalytics(
   const now = new Date();
   const from = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
 
-  const [payments, projExpenses, companyExpenses, projects] = await Promise.all([
+  const [payments, projExpenses, companyExpenses, projects, overhead] =
+    await Promise.all([
     prisma.payment.findMany({
       where: { invoice: { agencyId }, paymentDate: { gte: from } },
       select: { amount: true, paymentDate: true },
@@ -88,6 +96,7 @@ export async function getAnalytics(
         projectExpenses: { select: { amount: true } },
       },
     }),
+    resolveAgencyOverhead(agencyId, { now }),
   ]);
 
   const spanYears = from.getFullYear() !== now.getFullYear();
@@ -119,10 +128,11 @@ export async function getAnalytics(
 
   // ---- profitability ----
   const rows: ProfitabilityRow[] = projects.map((p) => {
+    const allocatedOverhead = overhead.overheadFor(p.id);
     const pr = calculateProjectProfit({
       contractValue: num(p.contractValue),
       teamCost: num(p.teamCost),
-      allocatedOverhead: num(p.allocatedOverhead),
+      allocatedOverhead,
       expenses: p.projectExpenses.map((e) => ({ amount: num(e.amount) })),
     });
     return {
@@ -134,7 +144,7 @@ export async function getAnalytics(
       contractValue: num(p.contractValue),
       teamCost: num(p.teamCost),
       expenses: pr.totalExpenses,
-      overhead: num(p.allocatedOverhead),
+      overhead: allocatedOverhead,
       totalCost: pr.totalCost,
       profit: pr.profit,
       margin: Number(pr.profitMargin.toFixed(1)),
@@ -179,6 +189,11 @@ export async function getAnalytics(
     },
     serviceMix,
     projects: rows,
+    overhead: {
+      method: overhead.method,
+      methodLabel: overhead.methodLabel,
+      monthlyPool: overhead.monthlyPool,
+    },
   };
 }
 

@@ -3,6 +3,7 @@ import {
   COMPANY_EXPENSE_CATEGORIES,
   RECURRING_FREQUENCIES,
 } from "@/lib/queries/settings";
+import { OVERHEAD_METHODS } from "@/lib/overhead";
 
 export const agencySettingsSchema = z
   .object({
@@ -14,6 +15,8 @@ export const agencySettingsSchema = z
       .optional(),
     logoUrl: z.string().trim().url().max(1000).optional().or(z.literal("")),
     monthlyRevenueTarget: z.coerce.number().min(0).optional(),
+    overheadMethod: z.enum(OVERHEAD_METHODS).optional(),
+    overheadRatePct: z.coerce.number().min(0).max(100).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, "Nothing to update");
 

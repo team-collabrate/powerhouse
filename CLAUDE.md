@@ -31,8 +31,29 @@ Never a stored DB column (Postgres generated columns can't do cross-table
 subqueries). Single source of truth: `src/lib/profit.ts`.
 `profit = contract_value - (team_cost + Σ project_expenses + allocated_overhead)`
 
-The dashboard profit chart amortises each active project's `teamCost` linearly
-across its start→deadline span (fallback 90 days) to get a daily cost figure.
+**Allocated overhead** is derived, not typed in. The `projects.allocated_overhead`
+column is now a per-project **override** — `> 0` pins that value; `0` means "use
+the agency rule". The rule lives on the agency (`overhead_method` +
+`overhead_rate`) and is resolved by `resolveAgencyOverhead(agencyId)`
+(`src/lib/queries/overhead.ts`, never throws → no-op resolver on failure) which
+feeds the **pure** `allocateOverhead()` in `src/lib/overhead.ts` (unit-tested,
+no Prisma). Methods:
+- `manual` (default) — override only, i.e. exactly the pre-rule behaviour.
+- `percent` — `contract_value × rate` for every non-closed project.
+- `even` — the monthly overhead pool split evenly across non-closed, non-pinned
+  projects, × each project's duration in months (`clamp(round(days/30), 1, 18)`,
+  fallback 3).
+- `contract_share` — same, weighted by contract-value share.
+The pool = normalised recurring run-rate + trailing-90-day one-off company
+expenses / 3 (`overheadMonthlyPool()`). `even`/`contract_share` are
+duration-weighted so `Σ allocations ≠ one month's pool` — correct for
+whole-project profit. Wired into `listProjects`, `getProject`
+(`cost.overheadSource`), `getAnalytics` (`AnalyticsResult.overhead`),
+`getClient`, and `buildDashboardView`.
+
+The dashboard profit chart amortises each non-closed project's `teamCost` **and
+its allocated overhead** linearly across its start→deadline span (fallback 90
+days) to get a daily cost figure.
 
 ## Multi-tenancy & permissions
 
@@ -122,9 +143,9 @@ Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
 
 Done: Sprint 1 auth · dashboard · Projects · Expenses · Invoices+payments ·
 RLS+roles · Clients · Settings · Analytics · Client portal · Invoice email ·
-CI · team invites.
+CI · team invites · overhead→project allocation.
 Time tracking is intentionally OUT (see Profit calculation above).
-Next: invoice PDF · overhead→project allocation · milestones · deploy.
+Next: invoice PDF · milestones · deploy.
 
 ### Client portal + invoice email
 
@@ -159,8 +180,12 @@ with the full cost breakdown, ranked by margin, CSV via
   Brand colour + logo are stored only — they don't restyle the dashboard.
 - Company overhead CRUD (`company_expenses` table): `GET/POST
   /api/company-expenses`, `PATCH/DELETE /api/company-expenses/[id]`.
-  Shows normalised $/mo recurring + last-month total. NOT yet wired to
-  project `allocatedOverhead` (that allocation is a separate design step).
+  Shows normalised $/mo recurring + last-month total.
+- Overhead allocation card (`OverheadAllocationCard`): picks the agency
+  `overhead_method` (+ `overhead_rate` % when `percent`) → `PATCH /api/settings`
+  (`{overheadMethod, overheadRatePct}`; `overheadRatePct` is 0–100, stored ÷100).
+  See "Profit calculation" for the rule. The analytics monthly cash-flow view
+  still books `company_expenses` by date and is unchanged — no double count.
 - Team (`TeamCard`): admins (`team:manage`) invite teammates, change roles
   inline, and deactivate/reactivate members. Assignable roles: admin /
   manager / team_member. Guards: can't change your own role, can't demote or

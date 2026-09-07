@@ -117,6 +117,13 @@ export default async function AnalyticsPage({
           }
         />
         <ProfitabilityTable rows={a.projects} />
+        <p className="border-t border-hairline px-5 py-3 text-[12px] text-ink-3">
+          Overhead allocated by: {a.overhead.methodLabel}
+          {a.overhead.method !== "manual" && a.overhead.method !== "percent"
+            ? ` · pool ≈ ${formatCurrency(a.overhead.monthlyPool)}/mo`
+            : ""}
+          .
+        </p>
       </Card>
     </div>
   );

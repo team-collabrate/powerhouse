@@ -216,7 +216,7 @@ export function ProjectDialog({
 
               <div className="grid grid-cols-2 gap-3">
                 <Field
-                  label="Allocated overhead ($)"
+                  label="Overhead override ($)"
                   type="number"
                   min={0}
                   step="100"
@@ -234,6 +234,10 @@ export function ProjectDialog({
                   error={errors.progressPercentage}
                 />
               </div>
+              <p className="-mt-2 text-[12px] text-ink-3">
+                Leave overhead at 0 to use the agency allocation rule
+                (Settings → Overhead allocation).
+              </p>
 
               <div className="grid grid-cols-2 gap-3">
                 <Field

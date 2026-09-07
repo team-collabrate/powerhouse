@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { calculateProjectProfit } from "@/lib/profit";
+import { resolveAgencyOverhead } from "@/lib/queries/overhead";
 import { displayInvoiceStatus, isOutstanding } from "@/lib/invoice-status";
 import type { InvoiceStatus } from "@/lib/dashboard-types";
 import type { ProjectStatus } from "@/lib/queries/projects";
@@ -130,7 +131,8 @@ export async function getClient(
   id: string,
 ): Promise<ClientDetail | null> {
   const now = new Date();
-  const c = await prisma.client.findFirst({
+  const [c, overhead] = await Promise.all([
+    prisma.client.findFirst({
     where: { id, agencyId },
     select: {
       id: true,
@@ -168,14 +170,16 @@ export async function getClient(
         },
       },
     },
-  });
+    }),
+    resolveAgencyOverhead(agencyId, { now }),
+  ]);
   if (!c) return null;
 
   const projects = c.projects.map((p) => {
     const pr = calculateProjectProfit({
       contractValue: num(p.contractValue),
       teamCost: num(p.teamCost),
-      allocatedOverhead: num(p.allocatedOverhead),
+      allocatedOverhead: overhead.overheadFor(p.id),
       expenses: p.projectExpenses.map((e) => ({ amount: num(e.amount) })),
     });
     return {

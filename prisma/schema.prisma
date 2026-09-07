@@ -20,6 +20,8 @@ model Agency {
   logoUrl              String?  @map("logo_url")
   brandColor           String   @default("#5cd65c") @map("brand_color")
   monthlyRevenueTarget Decimal  @default(0) @map("monthly_revenue_target")
+  overheadMethod       String   @default("manual") @map("overhead_method") // manual, percent, even, contract_share
+  overheadRate         Decimal  @default(0) @map("overhead_rate") // fraction 0..1, used when overheadMethod = percent
   subdomain            String?  @unique
   isActive             Boolean  @default(true) @map("is_active")
 

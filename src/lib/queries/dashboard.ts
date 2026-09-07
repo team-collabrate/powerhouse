@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { calculateProjectProfit } from "@/lib/profit";
+import { allocateOverhead, type OverheadMethod } from "@/lib/overhead";
+import { resolveAgencyOverhead } from "@/lib/queries/overhead";
 import { formatCurrency } from "@/lib/format";
 import { displayInvoiceStatus, isOutstanding } from "@/lib/invoice-status";
 import {
@@ -17,6 +19,7 @@ import {
  * ------------------------------------------------------------------ */
 
 export interface DashProjectInput {
+  id: string;
   name: string;
   status: string;
   serviceType: string;
@@ -46,6 +49,9 @@ export interface DashInputs {
   payments: { amount: number; date: Date }[]; // last 30 days
   clients: { createdAt: Date }[]; // last 6 months
   monthlyRevenueTarget: number;
+  overheadMethod: string;
+  overheadRate: number; // fraction 0..1
+  overheadMonthlyPool: number;
   greetingName: string;
   now: Date;
 }
@@ -83,13 +89,30 @@ export function buildDashboardView(input: DashInputs): DashboardView {
   const thirtyDaysAgo = new Date(now);
   thirtyDaysAgo.setDate(now.getDate() - 30);
 
+  // ---- overhead allocation (agency rule → per project) ----
+  const overheadMap = allocateOverhead(
+    {
+      method: (input.overheadMethod as OverheadMethod) ?? "manual",
+      percentRate: input.overheadRate,
+    },
+    input.overheadMonthlyPool,
+    projects.map((p) => ({
+      id: p.id,
+      status: p.status,
+      contractValue: p.contractValue,
+      startDate: p.startDate,
+      deadline: p.deadline,
+      overrideOverhead: p.allocatedOverhead,
+    })),
+  );
+
   // ---- per-project profit ----
   const withProfit = projects.map((p) => ({
     project: p,
     ...calculateProjectProfit({
       contractValue: p.contractValue,
       teamCost: p.teamCost,
-      allocatedOverhead: p.allocatedOverhead,
+      allocatedOverhead: overheadMap.get(p.id) ?? 0,
       expenses: p.expenses.map((e) => ({ amount: e.amount })),
     }),
   }));
@@ -174,19 +197,23 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     to: Date,
   ) => rows.filter((r) => r.date >= from && r.date < to).reduce((s, r) => s + r.amount, 0);
 
-  const dailyLabour = projects
-    .filter((p) => p.status !== "closed" && p.teamCost > 0)
-    .map((p) => {
-      const span =
-        p.startDate && p.deadline
-          ? Math.min(
-              365,
-              Math.max(7, (p.deadline.getTime() - p.startDate.getTime()) / DAY_MS),
-            )
-          : 90;
-      return { perDay: p.teamCost / span };
-    });
-  const totalDailyLabour = dailyLabour.reduce((s, d) => s + d.perDay, 0);
+  const spanDays = (p: DashProjectInput) =>
+    p.startDate && p.deadline
+      ? Math.min(
+          365,
+          Math.max(7, (p.deadline.getTime() - p.startDate.getTime()) / DAY_MS),
+        )
+      : 90;
+  const openProjects = projects.filter((p) => p.status !== "closed");
+  const totalDailyLabour = openProjects
+    .filter((p) => p.teamCost > 0)
+    .reduce((s, p) => s + p.teamCost / spanDays(p), 0);
+  // allocated overhead is a whole-project figure — amortise it across the
+  // same span as team cost so the chart's cost line stays consistent.
+  const totalDailyOverhead = openProjects.reduce(
+    (s, p) => s + (overheadMap.get(p.id) ?? 0) / spanDays(p),
+    0,
+  );
 
   const points: ProfitPoint[] = [];
   for (let b = 1; b <= BUCKETS; b++) {
@@ -200,7 +227,9 @@ export function buildDashboardView(input: DashInputs): DashboardView {
       from,
       end,
     );
-    const cost = sumIn(expenseEvents, from, end) + totalDailyLabour * windowDays;
+    const cost =
+      sumIn(expenseEvents, from, end) +
+      (totalDailyLabour + totalDailyOverhead) * windowDays;
 
     points.push({
       label: end.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -336,10 +365,12 @@ export async function getDashboardData(
   const paymentsSince = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const sixMonthsStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-  const [projects, invoices, payments, clients, agency] = await Promise.all([
+  const [projects, invoices, payments, clients, agency, overhead] =
+    await Promise.all([
     prisma.project.findMany({
       where: { agencyId },
       select: {
+        id: true,
         name: true,
         status: true,
         serviceType: true,
@@ -378,12 +409,14 @@ export async function getDashboardData(
       where: { id: agencyId },
       select: { monthlyRevenueTarget: true },
     }),
+    resolveAgencyOverhead(agencyId, { now }),
   ]);
 
   return buildDashboardView({
     greetingName,
     now,
     projects: projects.map((p) => ({
+      id: p.id,
       name: p.name,
       status: p.status,
       serviceType: p.serviceType,
@@ -414,5 +447,8 @@ export async function getDashboardData(
     })),
     clients,
     monthlyRevenueTarget: num(agency?.monthlyRevenueTarget),
+    overheadMethod: overhead.method,
+    overheadRate: overhead.percentRate,
+    overheadMonthlyPool: overhead.monthlyPool,
   });
 }

@@ -76,7 +76,18 @@ export default async function ProjectDetailPage({
           <Figure label="Contract" value={formatCurrency(p.contractValue)} />
           <Figure label="Team cost" value={formatCurrency(c.teamCost)} muted />
           <Figure label="Expenses" value={formatCurrency(c.expenses)} muted />
-          <Figure label="Overhead" value={formatCurrency(c.overhead)} muted />
+          <Figure
+            label="Overhead"
+            value={formatCurrency(c.overhead)}
+            muted
+            sub={
+              c.overheadSource === "pinned"
+                ? "pinned"
+                : c.overheadSource === "rule"
+                  ? "agency rule"
+                  : undefined
+            }
+          />
           <Figure label="Total cost" value={formatCurrency(c.total)} muted />
           <Figure
             label="Profit"

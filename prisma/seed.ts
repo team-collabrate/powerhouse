@@ -80,7 +80,16 @@ async function main() {
 
   await prisma.agency.update({
     where: { id: agencyId },
-    data: { monthlyRevenueTarget: D(90_000) },
+    data: {
+      monthlyRevenueTarget: D(90_000),
+      // Demo uses the `percent` rule (6% of contract value) so margins stay
+      // realistic — this seed lists Core payroll under company overhead, which
+      // the pool methods (even / contract_share) would over-allocate since
+      // labour is already tracked per project as teamCost. Helio keeps a
+      // pinned per-project override below to show that path.
+      overheadMethod: "percent",
+      overheadRate: D(0.06),
+    },
   });
 
   // ---- company overhead ----
@@ -169,16 +178,18 @@ async function main() {
 
   // ---- projects: `teamCost` is the estimated internal labour cost, tuned so
   // each project lands on a sensible margin. Acre is deliberately under 15%
-  // so the "under margin" insight fires. `since` = project age in days. ----
+  // so the "under margin" insight fires. `since` = project age in days.
+  // `overhead` is a per-project OVERRIDE — left at 0 so the agency rule
+  // (6% of contract value) applies; Helio pins its own value. ----
   const P = [
-    { name: "Northwind Rebrand", client: "Northwind Traders", service: "design", status: "active", value: 84_000, overhead: 4_000, since: 74, teamCost: 30_000, progress: 62 },
+    { name: "Northwind Rebrand", client: "Northwind Traders", service: "design", status: "active", value: 84_000, overhead: 0, since: 74, teamCost: 30_000, progress: 62 },
     { name: "Helio App Launch", client: "Helio Labs", service: "web_dev", status: "active", value: 145_000, overhead: 7_000, since: 74, teamCost: 47_000, progress: 48 },
-    { name: "Acre Storefront", client: "Acre & Co.", service: "web_dev", status: "active", value: 32_000, overhead: 2_500, since: 74, teamCost: 18_000, progress: 70, bigExpense: 7_000 },
-    { name: "Vector Site Refresh", client: "Vector Studio", service: "web_dev", status: "active", value: 41_000, overhead: 2_000, since: 62, teamCost: 15_000, progress: 55 },
-    { name: "Meridian Campaign", client: "Meridian Group", service: "marketing", status: "active", value: 52_000, overhead: 2_500, since: 55, teamCost: 21_000, progress: 44 },
-    { name: "Brightpath Advisory", client: "Brightpath", service: "consulting", status: "active", value: 33_000, overhead: 1_500, since: 40, teamCost: 13_000, progress: 38 },
-    { name: "Lumen Storefront", client: "Lumen Retail", service: "web_dev", status: "active", value: 60_000, overhead: 3_000, since: 22, teamCost: 16_000, progress: 22 },
-    { name: "Cobalt Brand System", client: "Cobalt Health", service: "design", status: "delivered", value: 64_000, overhead: 3_000, since: 130, teamCost: 30_000, progress: 100 },
+    { name: "Acre Storefront", client: "Acre & Co.", service: "web_dev", status: "active", value: 32_000, overhead: 0, since: 74, teamCost: 18_000, progress: 70, bigExpense: 7_000 },
+    { name: "Vector Site Refresh", client: "Vector Studio", service: "web_dev", status: "active", value: 41_000, overhead: 0, since: 62, teamCost: 15_000, progress: 55 },
+    { name: "Meridian Campaign", client: "Meridian Group", service: "marketing", status: "active", value: 52_000, overhead: 0, since: 55, teamCost: 21_000, progress: 44 },
+    { name: "Brightpath Advisory", client: "Brightpath", service: "consulting", status: "active", value: 33_000, overhead: 0, since: 40, teamCost: 13_000, progress: 38 },
+    { name: "Lumen Storefront", client: "Lumen Retail", service: "web_dev", status: "active", value: 60_000, overhead: 0, since: 22, teamCost: 16_000, progress: 22 },
+    { name: "Cobalt Brand System", client: "Cobalt Health", service: "design", status: "delivered", value: 64_000, overhead: 0, since: 130, teamCost: 30_000, progress: 100 },
   ];
 
   const projects = await Promise.all(

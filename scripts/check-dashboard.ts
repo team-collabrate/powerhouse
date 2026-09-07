@@ -7,6 +7,12 @@ import {
 } from "@/lib/queries/dashboard";
 import { can } from "@/lib/permissions";
 import { profitabilityCsv } from "@/lib/queries/analytics";
+import {
+  allocateOverhead,
+  overheadMonthlyPool,
+  overheadDurationMonths,
+  type OverheadProjectInput,
+} from "@/lib/overhead";
 
 const now = new Date("2026-09-15T12:00:00Z");
 const d = (offset: number) => {
@@ -20,8 +26,12 @@ const input: DashInputs = {
   greetingName: "Bella",
   now,
   monthlyRevenueTarget: 50_000,
+  overheadMethod: "manual",
+  overheadRate: 0,
+  overheadMonthlyPool: 0,
   projects: [
     {
+      id: "p-healthy",
       name: "Healthy Project",
       status: "active",
       serviceType: "web_dev",
@@ -35,6 +45,7 @@ const input: DashInputs = {
       expenses: [{ amount: 8_000, date: d(-10) }],
     },
     {
+      id: "p-thin",
       name: "Thin Margin Project",
       status: "active",
       serviceType: "design",
@@ -48,6 +59,7 @@ const input: DashInputs = {
       expenses: [{ amount: 2_000, date: d(-8) }],
     },
     {
+      id: "p-old",
       name: "Old Delivered",
       status: "delivered",
       serviceType: "consulting",
@@ -176,6 +188,66 @@ check(
   csvLines[1],
 );
 check("csv ends with the margin value", csvLines[1].endsWith(",52"));
+
+console.log("\noverhead:");
+const oNow = new Date("2026-09-15T12:00:00Z");
+const oDay = (offset: number) => new Date(oNow.getTime() + offset * 86_400_000);
+
+const pool = overheadMonthlyPool(
+  [
+    { amount: 6_500, dateIncurred: oDay(-5), isRecurring: true, recurringFrequency: "monthly" },
+    { amount: 900, dateIncurred: oDay(-5), isRecurring: true, recurringFrequency: "quarterly" }, // 300/mo
+    { amount: 1_200, dateIncurred: oDay(-5), isRecurring: true, recurringFrequency: "annually" }, // 100/mo
+    { amount: 9_000, dateIncurred: oDay(-30), isRecurring: false, recurringFrequency: null }, // 3000/mo
+    { amount: 6_000, dateIncurred: oDay(-120), isRecurring: false, recurringFrequency: null }, // excluded (>90d)
+  ],
+  oNow,
+);
+check("overhead pool = recurring run-rate + trailing one-offs/3", Math.round(pool) === 9_900, pool);
+
+check(
+  "duration months clamps to [1,18]",
+  overheadDurationMonths(oDay(-390), oDay(0)) === 13 &&
+    overheadDurationMonths(oDay(-2000), oDay(0)) === 18 &&
+    overheadDurationMonths(null, null) === 3,
+);
+
+const threeMo: OverheadProjectInput[] = [
+  { id: "a", status: "active", contractValue: 100_000, startDate: oDay(-45), deadline: oDay(45), overrideOverhead: 0 },
+  { id: "b", status: "in_review", contractValue: 300_000, startDate: oDay(-45), deadline: oDay(45), overrideOverhead: 0 },
+  { id: "c", status: "closed", contractValue: 50_000, startDate: oDay(-45), deadline: oDay(45), overrideOverhead: 0 },
+];
+
+const evenMap = allocateOverhead({ method: "even", percentRate: 0 }, 9_000, threeMo);
+check("even: non-closed split, x duration months", evenMap.get("a") === 13_500 && evenMap.get("b") === 13_500, [
+  evenMap.get("a"),
+  evenMap.get("b"),
+]);
+check("even: closed project gets 0", evenMap.get("c") === 0);
+
+const shareMap = allocateOverhead({ method: "contract_share", percentRate: 0 }, 4_000, threeMo);
+check("contract_share: weighted by contract value", shareMap.get("a") === 3_000 && shareMap.get("b") === 9_000, [
+  shareMap.get("a"),
+  shareMap.get("b"),
+]);
+
+const pctMap = allocateOverhead({ method: "percent", percentRate: 0.05 }, 0, threeMo);
+check("percent: rate x contract value", pctMap.get("a") === 5_000 && pctMap.get("b") === 15_000);
+
+const pinned: OverheadProjectInput[] = [
+  { id: "x", status: "active", contractValue: 100_000, startDate: oDay(-45), deadline: oDay(45), overrideOverhead: 2_000 },
+  { id: "y", status: "active", contractValue: 100_000, startDate: oDay(-45), deadline: oDay(45), overrideOverhead: 0 },
+];
+const pinMap = allocateOverhead({ method: "even", percentRate: 0 }, 6_000, pinned);
+check("pinned value wins and is excluded from the split", pinMap.get("x") === 2_000 && pinMap.get("y") === 18_000, [
+  pinMap.get("x"),
+  pinMap.get("y"),
+]);
+
+check(
+  "manual method allocates nothing (override-only)",
+  allocateOverhead({ method: "manual", percentRate: 0 }, 9_000, threeMo).get("a") === 0,
+);
 
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);
