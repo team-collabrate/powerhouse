@@ -14,10 +14,10 @@ export function Sidebar() {
       <div className="flex items-center justify-between px-2 py-1">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-xs)] bg-accent text-[15px] font-bold text-white">
-            A
+            P
           </span>
-          <span className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
-            Agency&nbsp;Pro
+          <span className="text-[15px] font-semibold tracking-[0.02em] text-ink">
+            POWERHOUSE
           </span>
         </Link>
         <button

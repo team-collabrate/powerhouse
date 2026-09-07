@@ -2,7 +2,7 @@ import { Resend } from "resend";
 
 const apiKey = process.env.RESEND_API_KEY;
 const FROM =
-  process.env.RESEND_FROM || "Agency Dashboard <onboarding@resend.dev>";
+  process.env.RESEND_FROM || "Powerhouse <onboarding@resend.dev>";
 
 const resend = apiKey ? new Resend(apiKey) : null;
 
@@ -88,7 +88,7 @@ export async function sendInviteEmail(p: {
   <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#14151a">
     <p style="font-size:14px;line-height:1.6">
       You've been invited to join <strong>${escapeHtml(p.agencyName)}</strong>
-      on Agency Dashboard as <strong>${escapeHtml(p.role)}</strong>.
+      on Powerhouse as <strong>${escapeHtml(p.role)}</strong>.
     </p>
     <p style="margin:24px 0">
       <a href="${p.inviteUrl}"

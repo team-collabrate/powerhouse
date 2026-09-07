@@ -8,10 +8,10 @@ export default function AuthLayout({
       <div className="w-full max-w-[400px] rounded-[var(--radius-md)] border border-hairline bg-surface p-8 shadow-[var(--shadow-card)]">
         <div className="mb-6 flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-xs)] bg-accent text-[15px] font-bold text-white">
-            A
+            P
           </span>
-          <span className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
-            Agency Pro
+          <span className="text-[15px] font-semibold tracking-[0.02em] text-ink">
+            POWERHOUSE
           </span>
         </div>
         {children}
