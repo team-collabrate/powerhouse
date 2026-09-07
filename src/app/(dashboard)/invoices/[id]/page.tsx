@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "react-feather";
+import { ArrowLeft, FileText } from "react-feather";
 import { getSessionContext } from "@/lib/session";
 import { getInvoice, invoiceableProjects } from "@/lib/queries/invoices";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -27,13 +27,24 @@ export default async function InvoiceDetailPage({
 
   return (
     <div className="space-y-5">
-      <Link
-        href="/invoices"
-        className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink-3 hover:text-ink-2"
-      >
-        <ArrowLeft size={14} />
-        Invoices
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          href="/invoices"
+          className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink-3 hover:text-ink-2"
+        >
+          <ArrowLeft size={14} />
+          Invoices
+        </Link>
+        <a
+          href={`/print/invoice/${id}`}
+          target="_blank"
+          rel="noopener"
+          className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink-3 hover:text-ink-2"
+        >
+          <FileText size={14} />
+          PDF
+        </a>
+      </div>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

@@ -219,6 +219,89 @@ export async function getInvoice(
   };
 }
 
+export interface InvoicePrintData {
+  agency: { name: string; logoUrl: string | null; brandColor: string };
+  client: {
+    companyName: string;
+    contactName: string;
+    email: string;
+    address: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    zipCode: string | null;
+  };
+  invoiceNumber: string;
+  projectName: string;
+  amount: number;
+  amountPaid: number;
+  balance: number;
+  status: InvoiceStatus;
+  issueDate: string | null;
+  dueDate: string;
+  notes: string | null;
+}
+
+export async function getInvoicePrintData(
+  agencyId: string,
+  id: string,
+): Promise<InvoicePrintData | null> {
+  const now = new Date();
+  const e = await prisma.invoice.findFirst({
+    where: { id, agencyId },
+    select: {
+      invoiceNumber: true,
+      amount: true,
+      status: true,
+      issueDate: true,
+      dueDate: true,
+      notes: true,
+      agency: { select: { name: true, logoUrl: true, brandColor: true } },
+      project: { select: { name: true } },
+      client: {
+        select: {
+          name: true,
+          companyName: true,
+          email: true,
+          address: true,
+          city: true,
+          state: true,
+          country: true,
+          zipCode: true,
+        },
+      },
+      payments: { select: { amount: true } },
+    },
+  });
+  if (!e) return null;
+
+  const amount = num(e.amount);
+  const amountPaid = e.payments.reduce((s, p) => s + num(p.amount), 0);
+
+  return {
+    agency: e.agency,
+    client: {
+      companyName: e.client.companyName ?? e.client.name,
+      contactName: e.client.name,
+      email: e.client.email,
+      address: e.client.address,
+      city: e.client.city,
+      state: e.client.state,
+      country: e.client.country,
+      zipCode: e.client.zipCode,
+    },
+    invoiceNumber: e.invoiceNumber,
+    projectName: e.project.name,
+    amount,
+    amountPaid,
+    balance: Math.max(0, amount - amountPaid),
+    status: displayInvoiceStatus(e.status, e.dueDate, amount, amountPaid, now),
+    issueDate: e.issueDate ? e.issueDate.toISOString() : null,
+    dueDate: e.dueDate.toISOString(),
+    notes: e.notes,
+  };
+}
+
 /** Next INV-YYYY-NNN for this agency. */
 export async function nextInvoiceNumber(agencyId: string): Promise<string> {
   const year = new Date().getFullYear();
