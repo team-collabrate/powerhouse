@@ -9,7 +9,6 @@ import {
   nextInvoiceNumber,
   type InvoiceStatus,
 } from "@/lib/queries/invoices";
-import { formatCurrency } from "@/lib/format";
 
 export async function GET(request: Request) {
   const auth = await requireSession();
@@ -48,12 +47,19 @@ export async function POST(request: Request) {
           clientId: project.clientId,
           projectId: project.id,
           invoiceNumber: number,
-          amount: input.amount,
+          amount: 0,
           status: "draft",
           issueDate: new Date(input.issueDate),
           dueDate: new Date(input.dueDate),
-          notes: input.notes || null,
           createdBy: auth.userId,
+          lineItems: {
+            create: {
+              description: `${project.name} — services`,
+              quantity: 1,
+              unitPrice: 0,
+              position: 0,
+            },
+          },
         },
         select: { id: true, invoiceNumber: true },
       });
@@ -75,7 +81,7 @@ export async function POST(request: Request) {
     action: "created_invoice",
     entityType: "invoice",
     entityId: invoice.id,
-    description: `Created ${invoice.invoiceNumber} (${formatCurrency(input.amount)}) for ${project.name}`,
+    description: `Started draft ${invoice.invoiceNumber} for ${project.name}`,
   });
 
   return ok(invoice, { status: 201 });

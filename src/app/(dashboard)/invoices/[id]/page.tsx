@@ -74,6 +74,70 @@ export default async function InvoiceDetailPage({
       </div>
 
       <Card>
+        <CardHeader title="Line items" menu={false} />
+        <div className="overflow-x-auto px-2 pb-2 pt-1">
+          <table className="w-full border-collapse text-[12.5px]">
+            <thead>
+              <tr>
+                {["Description", "Qty", "Rate", "Amount"].map((h, i) => (
+                  <th
+                    key={h}
+                    className={`eyebrow px-3 pb-2 pt-1 font-semibold ${i === 0 ? "text-left" : "text-right"}`}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {invoice.lineItems.map((li) => (
+                <tr key={li.id} className="border-t border-hairline">
+                  <td className="px-3 py-2 text-ink">{li.description}</td>
+                  <td className="tnum px-3 py-2 text-right text-ink-2">
+                    {li.quantity}
+                  </td>
+                  <td className="tnum px-3 py-2 text-right text-ink-2">
+                    {formatCurrency(li.unitPrice)}
+                  </td>
+                  <td className="tnum px-3 py-2 text-right font-medium text-ink">
+                    {formatCurrency(li.quantity * li.unitPrice)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-hairline">
+                <td colSpan={3} className="px-3 py-1.5 text-right text-ink-3">
+                  Subtotal
+                </td>
+                <td className="tnum px-3 py-1.5 text-right text-ink-2">
+                  {formatCurrency(invoice.subtotal)}
+                </td>
+              </tr>
+              {invoice.taxRatePct > 0 && (
+                <tr>
+                  <td colSpan={3} className="px-3 py-1.5 text-right text-ink-3">
+                    Tax ({invoice.taxRatePct}%)
+                  </td>
+                  <td className="tnum px-3 py-1.5 text-right text-ink-2">
+                    {formatCurrency(invoice.tax)}
+                  </td>
+                </tr>
+              )}
+              <tr className="border-t border-hairline">
+                <td colSpan={3} className="px-3 py-2 text-right font-semibold text-ink">
+                  Total
+                </td>
+                <td className="tnum px-3 py-2 text-right font-semibold text-ink">
+                  {formatCurrency(invoice.amount)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </Card>
+
+      <Card>
         <CardHeader title="Summary" menu={false} />
         <div className="grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-5 sm:grid-cols-4">
           <Figure label="Amount" value={formatCurrency(invoice.amount)} />

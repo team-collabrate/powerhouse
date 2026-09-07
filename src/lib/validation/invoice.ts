@@ -7,14 +7,6 @@ const dateStr = z
   .trim()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 
-const invoiceBase = z.object({
-  projectId: z.string().trim().min(1, "Select a project"),
-  amount: z.coerce.number().positive("Must be greater than 0"),
-  issueDate: dateStr,
-  dueDate: dateStr,
-  notes: z.string().trim().max(2000).optional().or(z.literal("")),
-});
-
 const dueAfterIssue = (v: { issueDate?: string; dueDate?: string }) =>
   !v.issueDate || !v.dueDate || v.dueDate >= v.issueDate;
 const dueError = {
@@ -22,13 +14,35 @@ const dueError = {
   path: ["dueDate"] as string[],
 };
 
-export const invoiceCreateSchema = invoiceBase.refine(dueAfterIssue, dueError);
+// create just makes a draft shell — line items are added in the editor
+export const invoiceCreateSchema = z
+  .object({
+    projectId: z.string().trim().min(1, "Select a project"),
+    issueDate: dateStr,
+    dueDate: dateStr,
+  })
+  .refine(dueAfterIssue, dueError);
+
+export const lineItemSchema = z.object({
+  description: z.string().trim().min(1, "Required").max(300),
+  quantity: z.coerce.number().positive("Must be > 0").max(1_000_000),
+  unitPrice: z.coerce.number().min(0, "Can't be negative").max(1e12),
+});
+
+// full editor save — draft only
+export const invoiceEditSchema = z
+  .object({
+    issueDate: dateStr.optional(),
+    dueDate: dateStr.optional(),
+    notes: z.string().trim().max(2000).optional().or(z.literal("")),
+    taxRatePct: z.coerce.number().min(0).max(100),
+    lineItems: z.array(lineItemSchema).min(1, "Add at least one line item"),
+  })
+  .refine(dueAfterIssue, dueError);
 
 // once sent, only notes + dueDate may change
 export const invoiceUpdateSchema = z
   .object({
-    amount: z.coerce.number().positive().optional(),
-    issueDate: dateStr.optional(),
     dueDate: dateStr.optional(),
     notes: z.string().trim().max(2000).optional().or(z.literal("")),
   })
@@ -43,5 +57,6 @@ export const paymentCreateSchema = z.object({
 });
 
 export type InvoiceCreateInput = z.infer<typeof invoiceCreateSchema>;
+export type InvoiceEditInput = z.infer<typeof invoiceEditSchema>;
 export type InvoiceUpdateInput = z.infer<typeof invoiceUpdateSchema>;
 export type PaymentCreateInput = z.infer<typeof paymentCreateSchema>;

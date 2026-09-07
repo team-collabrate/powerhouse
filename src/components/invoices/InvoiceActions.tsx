@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Edit2, Send, Slash, Trash2 } from "react-feather";
 import { InvoiceDialog } from "./InvoiceDialog";
@@ -84,7 +85,14 @@ export function InvoiceActions({
           />
         )}
 
-      {canInvoice && status !== "cancelled" && (
+      {canInvoice && status === "draft" && (
+        <Link href={`/invoices/${invoice.id}/edit`} className={btn}>
+          <Edit2 size={14} />
+          Edit
+        </Link>
+      )}
+
+      {canInvoice && (status === "sent" || status === "overdue" || status === "partial") && (
         <InvoiceDialog
           invoice={invoice}
           projects={projects}

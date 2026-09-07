@@ -1,6 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { displayInvoiceStatus, isOutstanding } from "@/lib/invoice-status";
+import { invoiceTotals } from "@/lib/invoice-total";
 import type { InvoiceStatus } from "@/lib/dashboard-types";
+
+export interface InvoiceLineItemRow {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
 
 export type { InvoiceStatus };
 
@@ -150,6 +158,10 @@ export interface InvoiceDetail extends InvoiceListItem {
   sentDate: string | null;
   paidDate: string | null;
   createdAt: string;
+  taxRatePct: number;
+  subtotal: number;
+  tax: number;
+  lineItems: InvoiceLineItemRow[];
   payments: {
     id: string;
     amount: number;
@@ -172,6 +184,7 @@ export async function getInvoice(
       id: true,
       invoiceNumber: true,
       amount: true,
+      taxRatePct: true,
       status: true,
       issueDate: true,
       dueDate: true,
@@ -183,6 +196,10 @@ export async function getInvoice(
       clientId: true,
       client: { select: { name: true } },
       project: { select: { name: true } },
+      lineItems: {
+        orderBy: { position: "asc" },
+        select: { id: true, description: true, quantity: true, unitPrice: true },
+      },
       payments: {
         orderBy: { paymentDate: "desc" },
         select: {
@@ -200,6 +217,14 @@ export async function getInvoice(
   if (!e) return null;
 
   const list = toListItem(e, now);
+  const lineItems: InvoiceLineItemRow[] = e.lineItems.map((li) => ({
+    id: li.id,
+    description: li.description,
+    quantity: num(li.quantity),
+    unitPrice: num(li.unitPrice),
+  }));
+  const taxRatePct = num(e.taxRatePct);
+  const t = invoiceTotals(lineItems, taxRatePct);
   return {
     ...list,
     clientId: e.clientId,
@@ -207,6 +232,10 @@ export async function getInvoice(
     sentDate: e.sentDate ? e.sentDate.toISOString() : null,
     paidDate: e.paidDate ? e.paidDate.toISOString() : null,
     createdAt: e.createdAt.toISOString(),
+    taxRatePct,
+    subtotal: t.subtotal,
+    tax: t.tax,
+    lineItems,
     payments: e.payments.map((p) => ({
       id: p.id,
       amount: num(p.amount),
@@ -233,6 +262,10 @@ export interface InvoicePrintData {
   };
   invoiceNumber: string;
   projectName: string;
+  lineItems: InvoiceLineItemRow[];
+  subtotal: number;
+  taxRatePct: number;
+  tax: number;
   amount: number;
   amountPaid: number;
   balance: number;
@@ -252,12 +285,17 @@ export async function getInvoicePrintData(
     select: {
       invoiceNumber: true,
       amount: true,
+      taxRatePct: true,
       status: true,
       issueDate: true,
       dueDate: true,
       notes: true,
       agency: { select: { name: true, logoUrl: true, brandColor: true } },
       project: { select: { name: true } },
+      lineItems: {
+        orderBy: { position: "asc" },
+        select: { id: true, description: true, quantity: true, unitPrice: true },
+      },
       client: {
         select: {
           name: true,
@@ -277,9 +315,21 @@ export async function getInvoicePrintData(
 
   const amount = num(e.amount);
   const amountPaid = e.payments.reduce((s, p) => s + num(p.amount), 0);
+  const lineItems: InvoiceLineItemRow[] = e.lineItems.map((li) => ({
+    id: li.id,
+    description: li.description,
+    quantity: num(li.quantity),
+    unitPrice: num(li.unitPrice),
+  }));
+  const taxRatePct = num(e.taxRatePct);
+  const t = invoiceTotals(lineItems, taxRatePct);
 
   return {
     agency: e.agency,
+    lineItems,
+    subtotal: t.subtotal,
+    taxRatePct,
+    tax: t.tax,
     client: {
       companyName: e.client.companyName ?? e.client.name,
       contactName: e.client.name,

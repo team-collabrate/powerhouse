@@ -265,8 +265,20 @@ with the full cost breakdown, ranked by margin, CSV via
 `/invoices/[id]` off `src/lib/queries/invoices.ts`. Lifecycle:
 draft → send (`/api/invoices/[id]/send`, emails via Resend — see Client
 portal + invoice email) → record payments (`/api/invoices/[id]/payments`)
-→ auto "paid" when Σpayments ≥ amount. Printable PDF at
-`/print/invoice/[id]` (`getInvoicePrintData()`, OS print-to-PDF, no lib). `src/lib/invoice-sync.ts` keeps the stored `status`
+→ auto "paid" when Σpayments ≥ amount.
+
+**Itemised invoices**: `InvoiceLineItem` rows + a single `Invoice.taxRatePct`.
+`invoices.amount` is the computed total (`invoiceTotals()` in
+`src/lib/invoice-total.ts`, pure) written on save, so every existing read
+is unchanged. "New invoice" makes a draft shell then opens the editor.
+`/invoices/[id]/edit` (`InvoiceEditor`, draft-only) — line-item rows on the
+left, live `<InvoiceDocument>` preview on the right; "Save & send" saves
+then hits `/send`. `PATCH /api/invoices/[id]` branches on `body.lineItems`:
+present → full editor save (draft only, replaces items, recomputes amount);
+absent → light edit (due date / notes, any non-cancelled status).
+Printable / PDF at `/print/invoice/[id]` shares `<InvoiceDocument>`.
+Migration `20260908120000_invoice_line_items` backfills one line item per
+existing invoice. `src/lib/invoice-sync.ts` keeps the stored `status`
 in step with payments; `src/lib/invoice-status.ts` `displayInvoiceStatus()`
 is the single source of truth for the badge (draft/sent/partial/overdue/
 paid/cancelled) and is used by the dashboard, project detail, and invoice

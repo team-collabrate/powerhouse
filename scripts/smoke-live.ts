@@ -85,9 +85,11 @@ async function main() {
   ok(`list: ${il.items.length} invoices (db has ${invCount})`, il.items.length === invCount);
   const anInv = il.items.find(i => i.status !== "draft")!;
   const id2 = await getInvoice(AID, anInv.id);
-  ok("detail loads", !!id2 && id2.invoiceNumber === anInv.invoiceNumber);
+  ok("detail loads with line items + totals", !!id2 && id2.lineItems.length > 0 && typeof id2.subtotal === "number");
   const pdf = await getInvoicePrintData(AID, anInv.id);
-  ok("print data: agency + client + line", !!pdf && !!pdf.agency.name && !!pdf.client.companyName);
+  ok("print data: agency + client + line items", !!pdf && !!pdf.agency.name && pdf.lineItems.length > 0);
+  const noOrphans = await prisma.invoice.count({ where: { agencyId: AID, lineItems: { none: {} } } });
+  ok("every invoice has ≥1 line item", noOrphans === 0, noOrphans);
 
   console.log("\n— notifications —");
   const n = await buildNotifications(AID);

@@ -13,6 +13,7 @@ import {
   overheadDurationMonths,
   type OverheadProjectInput,
 } from "@/lib/overhead";
+import { invoiceTotals, lineAmount } from "@/lib/invoice-total";
 
 const now = new Date("2026-09-15T12:00:00Z");
 const d = (offset: number) => {
@@ -248,6 +249,21 @@ check(
   "manual method allocates nothing (override-only)",
   allocateOverhead({ method: "manual", percentRate: 0 }, 9_000, threeMo).get("a") === 0,
 );
+
+console.log("\ninvoice totals:");
+const it1 = invoiceTotals(
+  [
+    { quantity: 2, unitPrice: 15000 },
+    { quantity: 1, unitPrice: 8000 },
+  ],
+  18,
+);
+check("subtotal = Σ(qty×rate)", it1.subtotal === 38000, it1);
+check("tax = subtotal × rate%", it1.tax === 6840, it1);
+check("total = subtotal + tax", it1.total === 44840, it1);
+check("no tax → total = subtotal", invoiceTotals([{ quantity: 1, unitPrice: 500 }], 0).total === 500);
+check("empty → zeros", invoiceTotals([], 18).total === 0);
+check("lineAmount rounds to 2dp", lineAmount({ quantity: 3, unitPrice: 33.333 }) === 100);
 
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

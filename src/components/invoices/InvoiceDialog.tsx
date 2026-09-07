@@ -11,29 +11,18 @@ import type {
   InvoiceProjectOption,
 } from "@/lib/queries/invoices";
 
-type FormState = {
-  projectId: string;
-  amount: string;
-  issueDate: string;
-  dueDate: string;
-  notes: string;
-};
-
-function initial(
-  invoice: InvoiceDetail | undefined,
-  projects: InvoiceProjectOption[],
-): FormState {
-  const today = new Date().toISOString().slice(0, 10);
-  const in14 = new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
-  return {
-    projectId: invoice?.projectId ?? projects[0]?.id ?? "",
-    amount: invoice ? String(invoice.amount) : "",
-    issueDate: invoice?.issueDate ? invoice.issueDate.slice(0, 10) : today,
-    dueDate: invoice?.dueDate ? invoice.dueDate.slice(0, 10) : in14,
-    notes: invoice?.notes ?? "",
-  };
+const todayStr = () => new Date().toISOString().slice(0, 10);
+function defaultDueDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + 14);
+  return d.toISOString().slice(0, 10);
 }
 
+/**
+ * Two modes:
+ * - create: pick a project + dates → makes a draft shell, then opens the editor.
+ * - edit (sent/overdue only): due date + notes. Draft edits go to /edit.
+ */
 export function InvoiceDialog({
   invoice,
   projects,
@@ -45,23 +34,32 @@ export function InvoiceDialog({
 }) {
   const router = useRouter();
   const isEdit = !!invoice;
-  const locked = isEdit && invoice!.status !== "draft"; // amount / issue date locked
+
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(() => initial(invoice, projects));
+  const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
+  const [dueDate, setDueDate] = useState(() =>
+    invoice?.dueDate
+      ? invoice.dueDate.slice(0, 10)
+      : defaultDueDate(),
+  );
+  const [notes, setNotes] = useState(invoice?.notes ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const client = projects.find((p) => p.id === form.projectId)?.clientName;
+  const client = projects.find((p) => p.id === projectId)?.clientName;
 
   function openDialog() {
-    setForm(initial(invoice, projects));
+    setProjectId(projects[0]?.id ?? "");
+    setDueDate(
+      invoice?.dueDate
+        ? invoice.dueDate.slice(0, 10)
+        : defaultDueDate(),
+    );
+    setNotes(invoice?.notes ?? "");
     setErrors({});
     setSubmitError(null);
     setOpen(true);
-  }
-  function set<K extends keyof FormState>(k: K, v: string) {
-    setForm((f) => ({ ...f, [k]: v }));
   }
 
   async function submit(e: React.FormEvent) {
@@ -71,20 +69,11 @@ export function InvoiceDialog({
     setSubmitError(null);
 
     const body = isEdit
-      ? locked
-        ? { dueDate: form.dueDate, notes: form.notes }
-        : {
-            amount: form.amount,
-            issueDate: form.issueDate,
-            dueDate: form.dueDate,
-            notes: form.notes,
-          }
+      ? { dueDate, notes }
       : {
-          projectId: form.projectId,
-          amount: form.amount,
-          issueDate: form.issueDate,
-          dueDate: form.dueDate,
-          notes: form.notes,
+          projectId,
+          issueDate: todayStr(),
+          dueDate,
         };
 
     const res = await fetch(
@@ -113,7 +102,7 @@ export function InvoiceDialog({
       setOpen(false);
       router.refresh();
     } else {
-      router.push(`/invoices/${json.data.id}`);
+      router.push(`/invoices/${json.data.id}/edit`);
     }
   }
 
@@ -128,7 +117,7 @@ export function InvoiceDialog({
             className="fixed inset-0 bg-ink/25"
             onClick={() => setOpen(false)}
           />
-          <div className="relative z-10 w-full max-w-[460px] rounded-[var(--radius-md)] border border-hairline bg-surface shadow-[var(--shadow-pop)]">
+          <div className="relative z-10 w-full max-w-[440px] rounded-[var(--radius-md)] border border-hairline bg-surface shadow-[var(--shadow-pop)]">
             <div className="flex items-center justify-between border-b border-hairline px-5 py-4">
               <h3 className="text-[15px] font-semibold text-ink">
                 {isEdit ? `Edit ${invoice!.invoiceNumber}` : "New invoice"}
@@ -143,67 +132,55 @@ export function InvoiceDialog({
             </div>
 
             <form onSubmit={submit} className="space-y-4 px-5 py-5">
-              <div>
-                <Select
-                  label="Project"
-                  value={form.projectId}
-                  onChange={(e) => set("projectId", e.target.value)}
-                  error={errors.projectId}
-                  disabled={isEdit}
-                >
-                  <option value="">Select a project</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </Select>
-                {client && (
-                  <p className="mt-1 text-[12px] text-ink-3">Bills to {client}</p>
-                )}
-              </div>
+              {!isEdit && (
+                <div>
+                  <Select
+                    label="Project"
+                    value={projectId}
+                    onChange={(e) => setProjectId(e.target.value)}
+                    error={errors.projectId}
+                  >
+                    <option value="">Select a project</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </Select>
+                  {client && (
+                    <p className="mt-1 text-[12px] text-ink-3">
+                      Bills to {client}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <Field
-                label="Amount (₹)"
-                type="number"
-                min={0}
-                step="100"
-                value={form.amount}
-                onChange={(e) => set("amount", e.target.value)}
-                error={errors.amount}
-                disabled={locked}
+                label="Due date"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                error={errors.dueDate}
               />
 
-              <div className="grid grid-cols-2 gap-3">
-                <Field
-                  label="Issue date"
-                  type="date"
-                  value={form.issueDate}
-                  onChange={(e) => set("issueDate", e.target.value)}
-                  error={errors.issueDate}
-                  disabled={locked}
+              {isEdit && (
+                <Textarea
+                  label="Notes (optional)"
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  error={errors.notes}
                 />
-                <Field
-                  label="Due date"
-                  type="date"
-                  value={form.dueDate}
-                  onChange={(e) => set("dueDate", e.target.value)}
-                  error={errors.dueDate}
-                />
-              </div>
+              )}
 
-              <Textarea
-                label="Notes (optional)"
-                rows={2}
-                value={form.notes}
-                onChange={(e) => set("notes", e.target.value)}
-                error={errors.notes}
-              />
-
-              {locked && (
+              {isEdit ? (
                 <p className="text-[12px] text-ink-3">
                   This invoice has been sent — only the due date and notes can
                   change.
+                </p>
+              ) : (
+                <p className="text-[12px] text-ink-3">
+                  You&apos;ll add line items and tax on the next screen.
                 </p>
               )}
               {submitError && <p className="text-[12px] text-loss">{submitError}</p>}
@@ -221,7 +198,7 @@ export function InvoiceDialog({
                   disabled={saving}
                   className="inline-flex h-9 items-center rounded-[var(--radius-sm)] bg-accent px-3.5 text-[13px] font-medium text-white hover:bg-accent-strong disabled:opacity-50"
                 >
-                  {saving ? "Saving…" : isEdit ? "Save changes" : "Create draft"}
+                  {saving ? "Saving…" : isEdit ? "Save changes" : "Continue"}
                 </button>
               </div>
             </form>
