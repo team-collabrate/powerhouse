@@ -90,7 +90,7 @@ export function PaymentDialog({
             <form onSubmit={submit} className="space-y-4 px-5 py-5">
               <div className="grid grid-cols-2 gap-3">
                 <Field
-                  label="Amount ($)"
+                  label="Amount (₹)"
                   type="number"
                   min={0}
                   step="0.01"

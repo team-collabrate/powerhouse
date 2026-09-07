@@ -195,7 +195,7 @@ export function ProjectDialog({
 
               <div className="grid grid-cols-2 gap-3">
                 <Field
-                  label="Contract value ($)"
+                  label="Contract value (₹)"
                   type="number"
                   min={0}
                   step="100"
@@ -204,7 +204,7 @@ export function ProjectDialog({
                   error={errors.contractValue}
                 />
                 <Field
-                  label="Team cost ($)"
+                  label="Team cost (₹)"
                   type="number"
                   min={0}
                   step="100"
@@ -216,7 +216,7 @@ export function ProjectDialog({
 
               <div className="grid grid-cols-2 gap-3">
                 <Field
-                  label="Overhead override ($)"
+                  label="Overhead override (₹)"
                   type="number"
                   min={0}
                   step="100"

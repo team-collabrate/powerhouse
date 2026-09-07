@@ -132,7 +132,7 @@ export function CompanyExpenseDialog({
                   ))}
                 </Select>
                 <Field
-                  label="Amount ($)"
+                  label="Amount (₹)"
                   type="number"
                   min={0}
                   step="0.01"

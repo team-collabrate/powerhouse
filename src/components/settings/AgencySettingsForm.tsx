@@ -65,7 +65,7 @@ export function AgencySettingsForm({ settings }: { settings: AgencySettings }) {
           error={errors.name}
         />
         <Field
-          label="Monthly revenue target ($)"
+          label="Monthly revenue target (₹)"
           type="number"
           min={0}
           step="1000"
