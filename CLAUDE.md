@@ -131,6 +131,20 @@ Create/edit UI is one client component — `ProjectDialog` (render-prop
 trigger) — wrapped by `NewProjectButton` / `EditProjectButton`. `ClientSelect`
 has inline "new client" creation.
 
+Milestones (`MilestonesCard` + `MilestoneDialog` on the detail page):
+`POST /api/projects/[id]/milestones`, `PATCH|DELETE /api/milestones/[id]`
+(gated `project:write`). Statuses pending / in_progress / completed
+(`queries/milestones.ts`); moving to "completed" stamps `completedDate`.
+
+## Auth pages
+
+`(auth)` route group: `/login`, `/signup`, `/forgot-password`,
+`/reset-password`. Reset flow: `resetPasswordForEmail` → link back to
+`/reset-password` → `updateUser({ password })`. `proxy.ts` PUBLIC_PATHS
+lets those through and does **not** bounce a recovery-session user off
+`/reset-password`. Sidebar shows the real session user (name + role);
+demo mode (no Supabase env) = "Demo User" / admin.
+
 ## Going live with real data
 
 Fill `.env.local` from `.env.example` (Supabase project URL + keys + pooled
@@ -141,17 +155,21 @@ npm run db:migrate                          # after editing schema.prisma
 # add SEED_EMAIL="you@example.com" to .env.local first (PowerShell-safe), then:
 npm run db:seed                             # fills that agency with demo rows
 ```
-Without `SEED_EMAIL` the seed builds a standalone "Meridian Studio" agency
-(no auth user attached — `prisma studio` inspection only).
+Without `SEED_EMAIL` the seed builds a standalone "Nayan Studio" agency
+(no auth user attached — `prisma studio` inspection only). Demo data is
+Indian: ₹ figures (`formatCurrency` = INR/en-IN), Indian client/team names,
+`money()` scales the authored base units ×40.
 
 ## Status
 
 Done: Sprint 1 auth · dashboard · Projects · Expenses · Invoices+payments ·
 RLS+roles · Clients · Settings · Analytics · Client portal · Invoice email ·
-CI · team invites · overhead→project allocation.
+CI · team invites · overhead→project allocation · milestones CRUD ·
+forgot/reset-password · printable invoice PDF · deployed to Vercel
+(powerhouse-co.vercel.app).
 Time tracking is intentionally OUT (see Profit calculation above).
-Deploy: repo is Vercel-ready (`DEPLOY.md`); account-bound steps pending.
-Next: invoice PDF · milestones · notifications.
+Next: notifications (overdue reminders) · first-run empty states ·
+portal "pay now" · DB region co-location (Vercel iad1 ↔ Supabase Singapore).
 
 ### Client portal + invoice email
 
@@ -211,9 +229,10 @@ with the full cost breakdown, ranked by margin, CSV via
 
 `/invoices` (status-tab filters, outstanding/overdue totals) and
 `/invoices/[id]` off `src/lib/queries/invoices.ts`. Lifecycle:
-draft → send (`/api/invoices/[id]/send`, no real email yet — Sprint 4) →
-record payments (`/api/invoices/[id]/payments`) → auto "paid" when
-Σpayments ≥ amount. `src/lib/invoice-sync.ts` keeps the stored `status`
+draft → send (`/api/invoices/[id]/send`, emails via Resend — see Client
+portal + invoice email) → record payments (`/api/invoices/[id]/payments`)
+→ auto "paid" when Σpayments ≥ amount. Printable PDF at
+`/print/invoice/[id]` (`getInvoicePrintData()`, OS print-to-PDF, no lib). `src/lib/invoice-sync.ts` keeps the stored `status`
 in step with payments; `src/lib/invoice-status.ts` `displayInvoiceStatus()`
 is the single source of truth for the badge (draft/sent/partial/overdue/
 paid/cancelled) and is used by the dashboard, project detail, and invoice
