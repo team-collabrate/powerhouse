@@ -1,4 +1,5 @@
 import {
+  Activity,
   BarChart2,
   Briefcase,
   CreditCard,
@@ -15,5 +16,6 @@ export const NAV = [
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/analytics", label: "Analytics", icon: PieChart },
+  { href: "/activity", label: "Activity", icon: Activity },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

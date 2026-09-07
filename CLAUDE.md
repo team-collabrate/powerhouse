@@ -136,6 +136,14 @@ Milestones (`MilestonesCard` + `MilestoneDialog` on the detail page):
 (gated `project:write`). Statuses pending / in_progress / completed
 (`queries/milestones.ts`); moving to "completed" stamps `completedDate`.
 
+## Activity feed
+
+`/activity` (nav item) — `getActivity(agencyId, cursor?)`
+(`queries/activity-feed.ts`) reads `activity_log` newest-first, 40/page,
+grouped by day, linked to the entity where `activityHref()` can resolve
+one. Every mutation already writes a human-readable `description` via
+`logActivity()`.
+
 ## Global search
 
 Header search box (`HeaderSearch`) → debounced `GET /api/search?q=` →
