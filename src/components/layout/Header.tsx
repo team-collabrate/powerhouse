@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut, Search } from "react-feather";
+import { LogOut } from "react-feather";
 import { createClient } from "@/lib/supabase/client";
 import { MobileNav } from "./MobileNav";
+import { HeaderSearch } from "./HeaderSearch";
 import { NotificationsBell } from "./NotificationsBell";
 import type { NotificationsData } from "@/lib/queries/notifications";
 
@@ -31,17 +32,7 @@ export function Header({
         Dashboard
       </h1>
 
-      <div className="relative ml-2 hidden max-w-[320px] flex-1 items-center md:flex">
-        <Search
-          size={15}
-          className="pointer-events-none absolute left-3 text-ink-3"
-        />
-        <input
-          type="search"
-          placeholder="Search projects, clients, invoices…"
-          className="h-9 w-full rounded-[var(--radius-sm)] border border-hairline bg-surface pl-9 pr-3 text-[13px] outline-none transition-colors placeholder:text-ink-3 focus:border-accent"
-        />
-      </div>
+      <HeaderSearch />
 
       <div className="ml-auto flex items-center gap-2">
         <NotificationsBell data={notifications} />

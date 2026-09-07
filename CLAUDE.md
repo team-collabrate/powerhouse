@@ -136,6 +136,13 @@ Milestones (`MilestonesCard` + `MilestoneDialog` on the detail page):
 (gated `project:write`). Statuses pending / in_progress / completed
 (`queries/milestones.ts`); moving to "completed" stamps `completedDate`.
 
+## Global search
+
+Header search box (`HeaderSearch`) → debounced `GET /api/search?q=` →
+`searchAgency(agencyId, q)` (`queries/search.ts`): projects by name,
+clients by company/contact/email, invoices by number — 6 each,
+case-insensitive. Dropdown with ↑/↓/↵ nav; `/` focuses it.
+
 ## Notifications
 
 `getNotifications(agencyId)` (`queries/notifications.ts`, cached with the
