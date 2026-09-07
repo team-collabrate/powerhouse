@@ -1,7 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { calculateProjectProfit } from "@/lib/profit";
 import { resolveAgencyOverhead } from "@/lib/queries/overhead";
+import { cacheAgencyRead } from "@/lib/cache";
 import type { OverheadMethod } from "@/lib/overhead";
+import {
+  ANALYTICS_PERIODS,
+  type AnalyticsPeriod,
+} from "@/lib/queries/analytics-shared";
+
+export { ANALYTICS_PERIODS };
+export type { AnalyticsPeriod };
 import {
   SERVICE_TYPE_LABELS,
   type ProjectStatus,
@@ -9,9 +17,6 @@ import {
 } from "@/lib/queries/projects";
 
 const num = (d: unknown): number => (d == null ? 0 : Number(d));
-
-export const ANALYTICS_PERIODS = [3, 6, 12] as const;
-export type AnalyticsPeriod = (typeof ANALYTICS_PERIODS)[number];
 
 export interface MonthlyPoint {
   label: string;
@@ -60,7 +65,13 @@ function monthLabel(d: Date, spanYears: boolean) {
   });
 }
 
-export async function getAnalytics(
+export const getAnalytics = cacheAgencyRead(
+  fetchAnalytics,
+  ["analytics"],
+  60,
+);
+
+async function fetchAnalytics(
   agencyId: string,
   months: AnalyticsPeriod,
 ): Promise<AnalyticsResult> {

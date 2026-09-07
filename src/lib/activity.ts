@@ -1,8 +1,11 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { bustAgencyData } from "@/lib/cache";
 
 /**
  * Append an audit-trail entry. Best-effort — never throw into the caller.
+ * Also drops the agency-scoped read cache: every mutation route calls this,
+ * so cached dashboard/analytics views reflect the write immediately.
  */
 export async function logActivity(entry: {
   agencyId: string;
@@ -28,4 +31,5 @@ export async function logActivity(entry: {
   } catch (err) {
     console.error("logActivity failed", err);
   }
+  bustAgencyData();
 }

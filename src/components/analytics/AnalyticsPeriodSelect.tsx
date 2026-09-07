@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ANALYTICS_PERIODS } from "@/lib/queries/analytics";
+import { ANALYTICS_PERIODS } from "@/lib/queries/analytics-shared";
 
 export function AnalyticsPeriodSelect({ current }: { current: number }) {
   const router = useRouter();

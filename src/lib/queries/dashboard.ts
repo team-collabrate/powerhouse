@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateProjectProfit } from "@/lib/profit";
 import { allocateOverhead, type OverheadMethod } from "@/lib/overhead";
 import { resolveAgencyOverhead } from "@/lib/queries/overhead";
+import { cacheAgencyRead } from "@/lib/cache";
 import { formatCurrency } from "@/lib/format";
 import { displayInvoiceStatus, isOutstanding } from "@/lib/invoice-status";
 import {
@@ -360,6 +361,17 @@ export async function getDashboardData(
   agencyId: string,
   greetingName: string,
 ): Promise<DashboardView> {
+  const view = await getDashboardDataCached(agencyId);
+  return { ...view, greetingName: greetingName || "there" };
+}
+
+const getDashboardDataCached = cacheAgencyRead(
+  fetchDashboardData,
+  ["dashboard-data"],
+  45,
+);
+
+async function fetchDashboardData(agencyId: string): Promise<DashboardView> {
   const now = new Date();
   // fetch payments back to the start of last month so month-over-month works
   const paymentsSince = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -413,7 +425,7 @@ export async function getDashboardData(
   ]);
 
   return buildDashboardView({
-    greetingName,
+    greetingName: "",
     now,
     projects: projects.map((p) => ({
       id: p.id,
