@@ -3,6 +3,14 @@ import { Resend } from "resend";
 const apiKey = process.env.RESEND_API_KEY;
 const FROM =
   process.env.RESEND_FROM || "Powerhouse <onboarding@resend.dev>";
+/** Where replies go when an agency hasn't set its own reply-to address. */
+const DEFAULT_REPLY_TO = process.env.RESEND_REPLY_TO || undefined;
+
+/** Prefer the agency's own address; otherwise the platform default (may be undefined). */
+function resolveReplyTo(agencyReplyTo?: string | null): string | undefined {
+  const v = agencyReplyTo?.trim();
+  return v || DEFAULT_REPLY_TO;
+}
 
 const resend = apiKey ? new Resend(apiKey) : null;
 
@@ -28,6 +36,8 @@ export async function sendInvoiceEmail(p: {
   portalUrl: string;
   /** the rendered invoice PDF, attached to the email */
   pdf?: { filename: string; content: Buffer };
+  /** the agency's own reply-to address; null/undefined uses the platform default */
+  replyTo?: string | null;
 }): Promise<SendResult> {
   if (!resend) {
     return {
@@ -56,11 +66,13 @@ export async function sendInvoiceEmail(p: {
   </div>`;
 
   try {
+    const replyTo = resolveReplyTo(p.replyTo);
     const { error } = await resend.emails.send({
       from: FROM,
       to: p.to,
       subject: `Invoice ${p.invoiceNumber} from ${p.agencyName}`,
       html,
+      ...(replyTo ? { replyTo } : {}),
       ...(p.pdf
         ? { attachments: [{ filename: p.pdf.filename, content: p.pdf.content }] }
         : {}),
@@ -82,6 +94,7 @@ export async function sendInviteEmail(p: {
   agencyName: string;
   role: string;
   inviteUrl: string;
+  replyTo?: string | null;
 }): Promise<SendResult> {
   if (!resend) {
     return {
@@ -104,11 +117,13 @@ export async function sendInviteEmail(p: {
     <p style="font-size:12px;color:#8b909c">Or paste this link:<br>${p.inviteUrl}</p>
   </div>`;
   try {
+    const replyTo = resolveReplyTo(p.replyTo);
     const { error } = await resend.emails.send({
       from: FROM,
       to: p.to,
       subject: `You're invited to ${p.agencyName}`,
       html,
+      ...(replyTo ? { replyTo } : {}),
     });
     if (error) return { delivered: false, note: `Invite created, email failed: ${error.message}` };
     return { delivered: true, note: `Invite emailed to ${p.to}` };

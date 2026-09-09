@@ -12,6 +12,7 @@ export function AgencySettingsForm({ settings }: { settings: AgencySettings }) {
     monthlyRevenueTarget: String(settings.monthlyRevenueTarget),
     brandColor: settings.brandColor,
     logoUrl: settings.logoUrl ?? "",
+    replyToEmail: settings.replyToEmail ?? "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
@@ -20,7 +21,8 @@ export function AgencySettingsForm({ settings }: { settings: AgencySettings }) {
     form.name !== settings.name ||
     Number(form.monthlyRevenueTarget) !== settings.monthlyRevenueTarget ||
     form.brandColor !== settings.brandColor ||
-    form.logoUrl !== (settings.logoUrl ?? "");
+    form.logoUrl !== (settings.logoUrl ?? "") ||
+    form.replyToEmail !== (settings.replyToEmail ?? "");
 
   function set<K extends keyof typeof form>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -39,6 +41,7 @@ export function AgencySettingsForm({ settings }: { settings: AgencySettings }) {
         monthlyRevenueTarget: form.monthlyRevenueTarget,
         brandColor: form.brandColor,
         logoUrl: form.logoUrl,
+        replyToEmail: form.replyToEmail,
       }),
     });
     const json = await res.json();
@@ -112,6 +115,22 @@ export function AgencySettingsForm({ settings }: { settings: AgencySettings }) {
         Brand colour and logo are stored for the upcoming client portal and
         invoice PDFs — they don&apos;t restyle this dashboard.
       </p>
+
+      <div className="border-t border-hairline pt-4">
+        <Field
+          label="Reply-to email (optional)"
+          type="email"
+          value={form.replyToEmail}
+          onChange={(e) => set("replyToEmail", e.target.value)}
+          error={errors.replyToEmail}
+          placeholder="billing@youragency.com"
+        />
+        <p className="mt-1.5 text-[12px] text-ink-3">
+          Invoice and invite emails are sent from the Powerhouse address, but
+          when a client hits <span className="font-medium">Reply</span> it goes
+          here. Leave blank to use the platform default.
+        </p>
+      </div>
 
       <div className="flex items-center gap-3 pt-1">
         <button

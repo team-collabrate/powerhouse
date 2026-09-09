@@ -28,7 +28,7 @@ export async function POST(_request: Request, { params }: Params) {
       dueDate: true,
       clientId: true,
       client: { select: { name: true, email: true, portalToken: true } },
-      agency: { select: { name: true } },
+      agency: { select: { name: true, replyToEmail: true } },
     },
   });
   if (!inv) return fail("NOT_FOUND", "Invoice not found", 404);
@@ -75,6 +75,7 @@ export async function POST(_request: Request, { params }: Params) {
     dueDate: formatDate(inv.dueDate),
     portalUrl: `${appUrl}/portal/${token}`,
     pdf,
+    replyTo: inv.agency.replyToEmail,
   });
 
   await logActivity({

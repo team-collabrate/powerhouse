@@ -17,6 +17,13 @@ export const agencySettingsSchema = z
     monthlyRevenueTarget: z.coerce.number().min(0).optional(),
     overheadMethod: z.enum(OVERHEAD_METHODS).optional(),
     overheadRatePct: z.coerce.number().min(0).max(100).optional(),
+    replyToEmail: z
+      .string()
+      .trim()
+      .email("Enter a valid email address")
+      .max(255)
+      .optional()
+      .or(z.literal("")),
   })
   .refine((v) => Object.keys(v).length > 0, "Nothing to update");
 

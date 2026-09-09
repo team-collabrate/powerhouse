@@ -232,10 +232,15 @@ with the full cost breakdown, ranked by margin, CSV via
 
 ### Settings (`/settings`, `settings:manage` = admin only)
 
-- Agency form (name, monthly revenue target, brand colour, logo URL) →
-  `PATCH /api/settings`. The revenue target drives the "% of target" hint +
-  progress bar on the dashboard Revenue KPI (`KpiView.hint` / `.progress`).
-  Brand colour + logo are stored only — they don't restyle the dashboard.
+- Agency form (name, monthly revenue target, brand colour, logo URL,
+  reply-to email) → `PATCH /api/settings`. The revenue target drives the
+  "% of target" hint + progress bar on the dashboard Revenue KPI
+  (`KpiView.hint` / `.progress`). Brand colour + logo are stored only — they
+  don't restyle the dashboard. **Reply-to email** (`agencies.reply_to_email`,
+  nullable) is the address a client's reply lands in — outbound invoice /
+  invite mail still sends `from` the platform `RESEND_FROM`, but carries this
+  as the `replyTo` header. Blank → `RESEND_REPLY_TO` env fallback (also
+  optional). Resolved in `src/lib/email.ts` (`resolveReplyTo`).
 - Company overhead CRUD (`company_expenses` table): `GET/POST
   /api/company-expenses`, `PATCH/DELETE /api/company-expenses/[id]`.
   Shows normalised $/mo recurring + last-month total.

@@ -37,6 +37,9 @@ export async function PATCH(request: Request) {
       ...(d.overheadRatePct !== undefined && {
         overheadRate: d.overheadRatePct / 100,
       }),
+      ...(d.replyToEmail !== undefined && {
+        replyToEmail: d.replyToEmail || null,
+      }),
     },
   });
 

@@ -16,6 +16,7 @@ export interface AgencySettings {
   monthlyRevenueTarget: number;
   overheadMethod: OverheadMethod;
   overheadRatePct: number; // 0..100 for the UI
+  replyToEmail: string | null; // client replies to invoice/invite emails go here
 }
 
 export async function getAgencySettings(
@@ -31,6 +32,7 @@ export async function getAgencySettings(
       monthlyRevenueTarget: true,
       overheadMethod: true,
       overheadRate: true,
+      replyToEmail: true,
     },
   });
   if (!a) return null;
@@ -45,6 +47,7 @@ export async function getAgencySettings(
     monthlyRevenueTarget: num(a.monthlyRevenueTarget),
     overheadMethod: method,
     overheadRatePct: num(a.overheadRate) * 100,
+    replyToEmail: a.replyToEmail,
   };
 }
 

@@ -24,6 +24,7 @@ model Agency {
   monthlyRevenueTarget Decimal  @default(0) @map("monthly_revenue_target")
   overheadMethod       String   @default("manual") @map("overhead_method") // manual, percent, even, contract_share
   overheadRate         Decimal  @default(0) @map("overhead_rate") // fraction 0..1, used when overheadMethod = percent
+  replyToEmail         String?  @map("reply_to_email") // client replies to invoice/invite emails land here; null = platform default
   subdomain            String?  @unique
   isActive             Boolean  @default(true) @map("is_active")
 

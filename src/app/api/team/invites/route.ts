@@ -53,13 +53,14 @@ export async function POST(request: Request) {
   const link = `${appUrl}/invite/${token}`;
   const agency = await prisma.agency.findUnique({
     where: { id: auth.agencyId },
-    select: { name: true },
+    select: { name: true, replyToEmail: true },
   });
   const emailResult = await sendInviteEmail({
     to: email,
     agencyName: agency?.name ?? "your agency",
     role: ROLE_LABELS[role as Role] ?? role,
     inviteUrl: link,
+    replyTo: agency?.replyToEmail,
   });
 
   await logActivity({
