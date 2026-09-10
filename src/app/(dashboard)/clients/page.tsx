@@ -26,10 +26,11 @@ export default async function ClientsPage({
   }
 
   const sp = await searchParams;
-  const { items, activeCount, inactiveCount } = await listClients(ctx.agencyId, {
-    q: sp.q,
-    includeInactive: sp.inactive === "1",
-  });
+  const { items, activeCount, inactiveCount, top1Pct, top3Pct } =
+    await listClients(ctx.agencyId, {
+      q: sp.q,
+      includeInactive: sp.inactive === "1",
+    });
 
   return (
     <div className="space-y-5">
@@ -41,6 +42,14 @@ export default async function ClientsPage({
           <p className="mt-1 text-[13px] text-ink-3">
             {activeCount} active
             {inactiveCount > 0 && ` · ${inactiveCount} inactive`}
+            {top1Pct > 0 && (
+              <>
+                {" · "}
+                <span className="tnum">top client {top1Pct}%</span>
+                {" of contract value, top 3 "}
+                <span className="tnum">{top3Pct}%</span>
+              </>
+            )}
           </p>
         </div>
         <NewClientButton />

@@ -16,12 +16,17 @@ export interface ClientListItem {
   projectCount: number;
   lifetimeValue: number; // Σ contract value
   outstanding: number; // Σ open invoice balances
+  /** share of total lifetime value across all clients, % */
+  valuePct: number;
 }
 
 export interface ClientListResult {
   items: ClientListItem[];
   activeCount: number;
   inactiveCount: number;
+  /** biggest client's share of total lifetime value, % */
+  top1Pct: number;
+  top3Pct: number;
 }
 
 export async function listClients(
@@ -70,8 +75,21 @@ export async function listClients(
       projectCount: c.projects.length,
       lifetimeValue,
       outstanding,
+      valuePct: 0,
     };
   });
+
+  all.sort((a, b) => b.lifetimeValue - a.lifetimeValue);
+  const totalValue = all.reduce((s, c) => s + c.lifetimeValue, 0);
+  for (const c of all) {
+    c.valuePct =
+      totalValue > 0
+        ? Math.round((c.lifetimeValue / totalValue) * 1000) / 10
+        : 0;
+  }
+  const top1Pct = all[0]?.valuePct ?? 0;
+  const top3Pct =
+    Math.round(all.slice(0, 3).reduce((s, c) => s + c.valuePct, 0) * 10) / 10;
 
   const activeCount = all.filter((c) => c.isActive).length;
   const inactiveCount = all.length - activeCount;
@@ -87,7 +105,7 @@ export async function listClients(
     return true;
   });
 
-  return { items, activeCount, inactiveCount };
+  return { items, activeCount, inactiveCount, top1Pct, top3Pct };
 }
 
 export interface ClientDetail {

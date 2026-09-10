@@ -68,6 +68,7 @@ const input: DashInputs = {
       contractValue: 100_000,
       teamCost: 45_000, // 45k + 8k exp + 5k oh = 58k -> 42% margin
       allocatedOverhead: 5_000,
+      progressPercentage: 60,
       createdAt: monthsBack(3),
       startDate: monthsBack(3),
       deadline: d(30),
@@ -82,6 +83,7 @@ const input: DashInputs = {
       contractValue: 20_000,
       teamCost: 16_500, // 16.5k + 2k + 1k = 19.5k -> ~2.5% margin (< 15)
       allocatedOverhead: 1_000,
+      progressPercentage: 20,
       createdAt: d(-3), // new this month
       startDate: d(-3),
       deadline: d(40),
@@ -96,6 +98,7 @@ const input: DashInputs = {
       contractValue: 40_000,
       teamCost: 20_000,
       allocatedOverhead: 0,
+      progressPercentage: 100,
       createdAt: monthsBack(5),
       startDate: monthsBack(5),
       deadline: monthsBack(1),
@@ -174,8 +177,8 @@ check("revenue KPI has no delta", v.kpis[0].delta === undefined, v.kpis[0].delta
 check("projects (non-closed) = 3", v.kpis[1].value === "3", v.kpis[1].value);
 check("new-this-year delta = +3", v.kpis[1].delta?.value === "+3", v.kpis[1].delta);
 check(
-  "projects hint = '2 in progress'",
-  v.kpis[1].hint === "2 in progress",
+  "projects hint = '2 in progress · 53% done' (contract-weighted)",
+  v.kpis[1].hint === "2 in progress · 53% done",
   v.kpis[1].hint,
 );
 check(
@@ -251,6 +254,7 @@ const mkProject = (o: Partial<DashProjectInput> = {}): DashProjectInput => ({
   contractValue: 0,
   teamCost: 0,
   allocatedOverhead: 0,
+  progressPercentage: 0,
   createdAt: new Date(2026, 0, 15),
   startDate: null,
   deadline: null,
@@ -345,8 +349,8 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
     }),
   );
   check(
-    'projects hint "1 in progress" with one active',
-    live.kpis[1].hint === "1 in progress",
+    'projects hint "1 in progress · 0% done" with one active',
+    live.kpis[1].hint === "1 in progress · 0% done",
     live.kpis[1].hint,
   );
 }

@@ -31,6 +31,7 @@ export interface DashProjectInput {
   contractValue: number;
   teamCost: number;
   allocatedOverhead: number;
+  progressPercentage: number;
   createdAt: Date;
   startDate: Date | null;
   deadline: Date | null;
@@ -109,9 +110,30 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     }),
   }));
   const nonClosed = withProfit.filter((x) => x.project.status !== "closed");
-  const activeCount = nonClosed.filter(
+  const activeProjects = nonClosed.filter(
     (x) => x.project.status === "active",
-  ).length;
+  );
+  const activeCount = activeProjects.length;
+  // contract-value-weighted mean completion across active projects
+  const activeContract = activeProjects.reduce(
+    (s, x) => s + Math.max(0, x.project.contractValue),
+    0,
+  );
+  const deliveryProgress =
+    activeContract > 0
+      ? Math.round(
+          activeProjects.reduce(
+            (s, x) =>
+              s + Math.max(0, x.project.contractValue) * x.project.progressPercentage,
+            0,
+          ) / activeContract,
+        )
+      : activeCount > 0
+        ? Math.round(
+            activeProjects.reduce((s, x) => s + x.project.progressPercentage, 0) /
+              activeCount,
+          )
+        : 0;
 
   // ---- KPIs (all-time / year-to-date — this is a low-volume, project-based
   // business, so a monthly view reads as mostly zeros) ----
@@ -165,7 +187,10 @@ export function buildDashboardView(input: DashInputs): DashboardView {
           ? { value: `+${newThisYear}`, direction: "up" }
           : undefined,
       icon: "briefcase",
-      hint: activeCount > 0 ? `${activeCount} in progress` : "all delivered",
+      hint:
+        activeCount > 0
+          ? `${activeCount} in progress · ${deliveryProgress}% done`
+          : "all delivered",
     },
     {
       id: "margin",
@@ -429,6 +454,7 @@ export async function fetchDashboardData(
         contractValue: true,
         teamCost: true,
         allocatedOverhead: true,
+        progressPercentage: true,
         createdAt: true,
         startDate: true,
         deadline: true,
@@ -486,6 +512,7 @@ export async function fetchDashboardData(
       contractValue: num(p.contractValue),
       teamCost: num(p.teamCost),
       allocatedOverhead: num(p.allocatedOverhead),
+      progressPercentage: p.progressPercentage,
       createdAt: p.createdAt,
       startDate: p.startDate,
       deadline: p.deadline,

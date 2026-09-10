@@ -156,6 +156,7 @@ export interface InvoiceDetail extends InvoiceListItem {
   clientId: string;
   notes: string | null;
   sentDate: string | null;
+  viewedDate: string | null;
   paidDate: string | null;
   createdAt: string;
   taxRatePct: number;
@@ -189,6 +190,7 @@ export async function getInvoice(
       issueDate: true,
       dueDate: true,
       sentDate: true,
+      viewedDate: true,
       paidDate: true,
       notes: true,
       createdAt: true,
@@ -230,6 +232,7 @@ export async function getInvoice(
     clientId: e.clientId,
     notes: e.notes,
     sentDate: e.sentDate ? e.sentDate.toISOString() : null,
+    viewedDate: e.viewedDate ? e.viewedDate.toISOString() : null,
     paidDate: e.paidDate ? e.paidDate.toISOString() : null,
     createdAt: e.createdAt.toISOString(),
     taxRatePct,

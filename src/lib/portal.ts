@@ -73,6 +73,18 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
 
   if (!client || !client.isActive) return null;
 
+  // Best-effort: stamp first-viewed on the invoices this client can see.
+  prisma.invoice
+    .updateMany({
+      where: {
+        client: { portalToken: token },
+        viewedDate: null,
+        status: { not: "draft" },
+      },
+      data: { viewedDate: now },
+    })
+    .catch(() => {});
+
   const invoices = client.invoices.map((i) => {
     const amount = num(i.amount);
     const amountPaid = i.payments.reduce((s, p) => s + num(p.amount), 0);

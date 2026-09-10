@@ -174,12 +174,18 @@ export default async function InvoiceDetailPage({
             )}
           />
         </div>
-        {(invoice.issueDate || invoice.sentDate || invoice.notes) && (
+        {(invoice.issueDate ||
+          invoice.sentDate ||
+          invoice.viewedDate ||
+          invoice.notes) && (
           <div className="space-y-1 border-t border-hairline px-5 py-3 text-[12.5px] text-ink-3">
             {invoice.issueDate && (
               <p>Issued {formatDate(invoice.issueDate)}</p>
             )}
             {invoice.sentDate && <p>Sent {formatDate(invoice.sentDate)}</p>}
+            {invoice.viewedDate && (
+              <p>Viewed by client {formatDate(invoice.viewedDate)}</p>
+            )}
             {invoice.notes && (
               <p className="pt-1 text-[13px] text-ink-2">{invoice.notes}</p>
             )}
