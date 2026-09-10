@@ -6,7 +6,7 @@
 */
 import { prisma } from "@/lib/prisma";
 import { fetchDashboardData } from "@/lib/queries/dashboard";
-import { fetchAnalytics } from "@/lib/queries/analytics";
+import { fetchReport } from "@/lib/queries/report";
 import { listProjects, getProject } from "@/lib/queries/projects";
 import { listClients, getClient } from "@/lib/queries/clients";
 import { listInvoices, getInvoice, getInvoicePrintData } from "@/lib/queries/invoices";
@@ -56,13 +56,31 @@ async function main() {
   ok("has insights", dash.insights.length > 0);
   ok("service mix present", dash.services.length > 0);
 
-  console.log("\n— analytics —");
-  for (const m of [3, 6, 12] as const) {
-    const a = await fetchAnalytics(AID, m);
-    ok(`analytics ${m}mo: ${a.monthly.length} months, ${a.projects.length} projects`, a.monthly.length === m && a.projects.length === 8);
+  console.log("\n— analytics / report —");
+  const projCount = (await listProjects(AID)).counts.all;
+  for (const preset of ["this_fy", "last_month", "last_12_months"] as const) {
+    const a = await fetchReport(AID, { preset });
+    ok(
+      `report ${preset}: ${a.cashflow.length} buckets, ${a.profitability.length} projects, GST ${a.gst.byQuarter.length}q`,
+      a.cashflow.length > 0 && a.profitability.length === projCount,
+    );
   }
-  const a6 = await fetchAnalytics(AID, 6);
-  ok("analytics overhead meta", a6.overhead.method === "percent");
+  const rep = await fetchReport(AID, { preset: "last_12_months" });
+  ok("report overhead meta present", typeof rep.overhead.methodLabel === "string");
+  ok(
+    "report sections populated",
+    Array.isArray(rep.paymentMethods) &&
+      Array.isArray(rep.aging.buckets) &&
+      typeof rep.dso.avgDays === "number" &&
+      Array.isArray(rep.clients.rows) &&
+      typeof rep.summary.revenue.value === "number",
+  );
+  const custom = await fetchReport(AID, {
+    preset: "custom",
+    from: "2026-06-01",
+    to: "2026-07-01",
+  });
+  ok("report custom June 2026", custom.period.preset === "custom");
 
   console.log("\n— projects —");
   const pl = await listProjects(AID);

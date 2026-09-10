@@ -29,6 +29,7 @@ export function ProfitabilityTable({ rows }: { rows: ProfitabilityRow[] }) {
               "Overhead",
               "Profit",
               "Margin",
+              "Progress",
             ].map((h, i) => (
               <th
                 key={h}
@@ -87,6 +88,9 @@ export function ProfitabilityTable({ rows }: { rows: ProfitabilityRow[] }) {
                 }`}
               >
                 {r.margin}%
+              </td>
+              <td className="tnum px-3 py-2.5 text-right text-[12.5px] text-ink-3">
+                {r.progress}%
               </td>
             </tr>
           ))}

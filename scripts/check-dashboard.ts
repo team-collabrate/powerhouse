@@ -747,6 +747,7 @@ const csv = profitabilityCsv([
     totalCost: 24000,
     profit: 26000,
     margin: 52,
+    progress: 40,
   },
 ]);
 const csvLines = csv.split("\n");
@@ -756,7 +757,7 @@ check(
   csvLines[1].startsWith('"Re""brand, Ltd",Acme,active'),
   csvLines[1],
 );
-check("csv ends with the margin value", csvLines[1].endsWith(",52"));
+check("csv ends with margin, progress", csvLines[1].endsWith(",52,40"));
 
 console.log("\noverhead:");
 const oNow = new Date("2026-09-15T12:00:00Z");

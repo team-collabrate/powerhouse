@@ -1,26 +1,17 @@
-import { prisma } from "@/lib/prisma";
+/**
+ * Pure analytics helpers — no Prisma, no cache. The period-scoped fetching
+ * lives in `src/lib/queries/report.ts` (`getReport`).
+ */
 import { calculateProjectProfit } from "@/lib/profit";
-import { resolveAgencyOverhead } from "@/lib/queries/overhead";
-import { cacheAgencyRead } from "@/lib/cache";
-import type { OverheadMethod } from "@/lib/overhead";
-import {
-  ANALYTICS_PERIODS,
-  type AnalyticsPeriod,
-} from "@/lib/queries/analytics-shared";
-
-export { ANALYTICS_PERIODS };
-export type { AnalyticsPeriod };
 import {
   SERVICE_TYPE_LABELS,
   type ProjectStatus,
   type ServiceType,
 } from "@/lib/queries/projects";
 
-const num = (d: unknown): number => (d == null ? 0 : Number(d));
-
 export interface MonthlyPoint {
   label: string;
-  revenue: number; // payments received
+  revenue: number; // payments received in the bucket
   cost: number; // project expenses + company overhead, by date
   net: number;
 }
@@ -38,174 +29,80 @@ export interface ProfitabilityRow {
   totalCost: number;
   profit: number;
   margin: number;
+  /** delivery progress %, 0–100 */
+  progress: number;
 }
 
-export interface AnalyticsResult {
-  months: AnalyticsPeriod;
-  monthly: MonthlyPoint[];
-  summary: {
-    revenue: number;
-    cost: number;
-    net: number;
-    avgMargin: number; // across active projects, all-time
-  };
-  serviceMix: { label: string; value: number; amount: number }[];
-  projects: ProfitabilityRow[];
-  overhead: {
-    method: OverheadMethod;
-    methodLabel: string;
-    monthlyPool: number;
-  };
+export interface ProfitabilityInput {
+  id: string;
+  name: string;
+  clientName: string;
+  status: string;
+  serviceType: string;
+  contractValue: number;
+  teamCost: number;
+  progressPercentage: number;
+  expenses: number[];
 }
 
-function monthLabel(d: Date, spanYears: boolean) {
-  return d.toLocaleDateString("en-IN", {
-    month: "short",
-    ...(spanYears ? { year: "2-digit" } : {}),
-  });
+/** Per-project cost breakdown, ranked by margin (worst first is the caller's job). */
+export function buildProfitability(
+  projects: ProfitabilityInput[],
+  overheadFor: (projectId: string) => number,
+): ProfitabilityRow[] {
+  return projects
+    .map((p) => {
+      const overhead = overheadFor(p.id);
+      const pr = calculateProjectProfit({
+        contractValue: p.contractValue,
+        teamCost: p.teamCost,
+        allocatedOverhead: overhead,
+        expenses: p.expenses.map((amount) => ({ amount })),
+      });
+      return {
+        id: p.id,
+        name: p.name,
+        client: p.clientName,
+        status: p.status as ProjectStatus,
+        serviceType: p.serviceType as ServiceType,
+        contractValue: p.contractValue,
+        teamCost: p.teamCost,
+        expenses: pr.totalExpenses,
+        overhead,
+        totalCost: pr.totalCost,
+        profit: pr.profit,
+        margin: Number(pr.profitMargin.toFixed(1)),
+        progress: p.progressPercentage,
+      };
+    })
+    .sort((a, b) => b.margin - a.margin);
 }
 
-export const getAnalytics = cacheAgencyRead(
-  fetchAnalytics,
-  ["analytics"],
-  60,
-);
+export interface ServiceMixSlice {
+  label: string;
+  value: number; // % of contract value
+  amount: number;
+}
 
-export async function fetchAnalytics(
-  agencyId: string,
-  months: AnalyticsPeriod,
-): Promise<AnalyticsResult> {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
-
-  const [payments, projExpenses, companyExpenses, projects, overhead] =
-    await Promise.all([
-    prisma.payment.findMany({
-      where: { invoice: { agencyId }, paymentDate: { gte: from } },
-      select: { amount: true, paymentDate: true },
-    }),
-    prisma.projectExpense.findMany({
-      where: { project: { agencyId }, dateIncurred: { gte: from } },
-      select: { amount: true, dateIncurred: true },
-    }),
-    prisma.companyExpense.findMany({
-      where: { agencyId, dateIncurred: { gte: from } },
-      select: { amount: true, dateIncurred: true },
-    }),
-    prisma.project.findMany({
-      where: { agencyId },
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        serviceType: true,
-        contractValue: true,
-        teamCost: true,
-        allocatedOverhead: true,
-        client: { select: { name: true } },
-        projectExpenses: { select: { amount: true } },
-      },
-    }),
-    resolveAgencyOverhead(agencyId),
-  ]);
-
-  const spanYears = from.getFullYear() !== now.getFullYear();
-
-  const monthly: MonthlyPoint[] = [];
-  for (let m = months - 1; m >= 0; m--) {
-    const start = new Date(now.getFullYear(), now.getMonth() - m, 1);
-    const end = new Date(now.getFullYear(), now.getMonth() - m + 1, 1);
-    const inRange = (dt: Date) => dt >= start && dt < end;
-
-    const revenue = payments
-      .filter((p) => inRange(p.paymentDate))
-      .reduce((s, p) => s + num(p.amount), 0);
-    const cost =
-      projExpenses
-        .filter((e) => inRange(e.dateIncurred))
-        .reduce((s, e) => s + num(e.amount), 0) +
-      companyExpenses
-        .filter((e) => inRange(e.dateIncurred))
-        .reduce((s, e) => s + num(e.amount), 0);
-
-    monthly.push({
-      label: monthLabel(start, spanYears),
-      revenue: Math.round(revenue),
-      cost: Math.round(cost),
-      net: Math.round(revenue - cost),
-    });
-  }
-
-  // ---- profitability ----
-  const rows: ProfitabilityRow[] = projects.map((p) => {
-    const allocatedOverhead = overhead.overheadFor(p.id);
-    const pr = calculateProjectProfit({
-      contractValue: num(p.contractValue),
-      teamCost: num(p.teamCost),
-      allocatedOverhead,
-      expenses: p.projectExpenses.map((e) => ({ amount: num(e.amount) })),
-    });
-    return {
-      id: p.id,
-      name: p.name,
-      client: p.client.name,
-      status: p.status as ProjectStatus,
-      serviceType: p.serviceType as ServiceType,
-      contractValue: num(p.contractValue),
-      teamCost: num(p.teamCost),
-      expenses: pr.totalExpenses,
-      overhead: allocatedOverhead,
-      totalCost: pr.totalCost,
-      profit: pr.profit,
-      margin: Number(pr.profitMargin.toFixed(1)),
-    };
-  });
-  rows.sort((a, b) => b.margin - a.margin);
-
-  const activeRows = rows.filter((r) => r.status === "active");
-  const avgMargin =
-    activeRows.length > 0
-      ? activeRows.reduce((s, r) => s + r.margin, 0) / activeRows.length
-      : 0;
-
-  // ---- service mix (by contract value) ----
+export function serviceMixByContract(
+  rows: { serviceType: ServiceType; contractValue: number }[],
+): ServiceMixSlice[] {
   const byService = new Map<string, number>();
   for (const r of rows) {
-    byService.set(r.serviceType, (byService.get(r.serviceType) ?? 0) + r.contractValue);
+    byService.set(
+      r.serviceType,
+      (byService.get(r.serviceType) ?? 0) + r.contractValue,
+    );
   }
-  const serviceTotal = [...byService.values()].reduce((s, v) => s + v, 0);
-  const serviceMix =
-    serviceTotal > 0
-      ? [...byService.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .map(([type, amount]) => ({
-            label: SERVICE_TYPE_LABELS[type as ServiceType] ?? type,
-            amount,
-            value: Math.round((amount / serviceTotal) * 100),
-          }))
-      : [];
-
-  const revenueTotal = monthly.reduce((s, m) => s + m.revenue, 0);
-  const costTotal = monthly.reduce((s, m) => s + m.cost, 0);
-
-  return {
-    months,
-    monthly,
-    summary: {
-      revenue: revenueTotal,
-      cost: costTotal,
-      net: revenueTotal - costTotal,
-      avgMargin,
-    },
-    serviceMix,
-    projects: rows,
-    overhead: {
-      method: overhead.method,
-      methodLabel: overhead.methodLabel,
-      monthlyPool: overhead.monthlyPool,
-    },
-  };
+  const total = [...byService.values()].reduce((s, v) => s + v, 0);
+  if (total <= 0) return [];
+  return [...byService.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([type, amount]) => ({
+      label: SERVICE_TYPE_LABELS[type as ServiceType] ?? type,
+      amount,
+      value: Math.round((amount / total) * 100),
+    }));
 }
 
 export function profitabilityCsv(rows: ProfitabilityRow[]): string {
@@ -221,6 +118,7 @@ export function profitabilityCsv(rows: ProfitabilityRow[]): string {
     "Total cost",
     "Profit",
     "Margin %",
+    "Progress %",
   ];
   const lines = rows.map((r) =>
     [
@@ -235,6 +133,7 @@ export function profitabilityCsv(rows: ProfitabilityRow[]): string {
       r.totalCost,
       r.profit,
       r.margin,
+      r.progress,
     ]
       .map((v) => {
         const s = String(v);
