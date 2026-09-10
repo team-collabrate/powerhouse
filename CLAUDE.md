@@ -114,12 +114,16 @@ lib); every component takes a typed slice of `DashboardView` as props.
 project-based business, so a month-to-date view read as mostly zeros.
 Revenue KPI = all-time payments received (hint: this-year figure, and % of
 `monthlyRevenueTarget × 12` when a target is set). Projects KPI = count of
-non-closed projects (`+N` = created this year, hint = `N in progress` / `all
-delivered`). Profit Margin KPI = portfolio-weighted `Σ profit / Σ contract`
-across every open project (not a simple average, and not active-only). Top
-Projects and the under-margin insight also span all non-closed projects (the
-insight still skips `delivered`). Profit chart = trailing 12 months (see
-Profit calculation). `getDashboardData` now pulls **all** payments.
+non-closed projects (`+N` = created this year, hint = `N in progress ·
+X% done` where X is contract-weighted mean `progressPercentage` across active
+projects, or `all delivered`). Profit Margin KPI = portfolio-weighted
+`Σ profit / Σ contract` across every open project (not a simple average, and
+not active-only). Top Projects and the under-margin insight also span all
+non-closed projects (the insight still skips `delivered`). Profit chart =
+trailing 12 months (see Profit calculation). `getDashboardData` pulls **all**
+payments + all milestones. `DashboardView.deliverables` (overdue + upcoming
+milestones, from the pure `buildMilestoneRollup`) feeds the "Upcoming
+deliverables" card.
 
 `npm run test` runs `scripts/check-dashboard.ts` — pure-function assertions
 against `buildDashboardView` with synthetic rows, no DB needed.
@@ -168,17 +172,24 @@ case-insensitive. Dropdown with ↑/↓/↵ nav; `/` focuses it.
 
 `getNotifications(agencyId)` (`queries/notifications.ts`, cached with the
 `agency-data` tag) computes "needs attention" items from current data — no
-table: overdue invoices, invoices due ≤ 5 days, active projects under 15 %
-margin, projects past deadline. The layout passes it to
-`<Header>` → `<NotificationsBell>` (bell + high-severity count badge,
-dropdown). Not shown for `client` role.
+table. `buildNotifications` fetches + normalises, then the **pure**
+classifiers in `src/lib/reports/notifications.ts` (`classifyInvoice`,
+`classifyProjectMargin`/`classifyProjectDeadline`, `classifyMilestone`,
+`classifyDraftInvoice`, `classifyRevenueShortfall`) each return an item or
+`null`; `assembleNotifications` sorts (high severity first), trims to 15, and
+counts high-severity for the badge. Kinds: `overdue` invoices, `due_soon`
+(≤ 5 days), `under_margin` (active < 15 %), `past_deadline`,
+`milestone_overdue`, `milestone_due` (≤ 5 days), `draft_aging` (draft > 14 d,
+never sent → `/invoices/[id]/edit`), `revenue_shortfall` (last week of month,
+MTD payments < 60 % of `monthlyRevenueTarget` → `/analytics`). The layout
+passes it to `<Header>` → `<NotificationsBell>`. Not shown for `client` role.
 
 ## Perf / caching
 
 Vercel functions run in Singapore (`sin1`), co-located with the Supabase
 `ap-southeast-1` DB — queries are ~5ms, not ~250ms (a single-query page
 dropped from ~1.5s to ~0.25s). On top of that, `src/lib/cache.ts` wraps
-`getDashboardData`, `getAnalytics`, `getNotifications` in `unstable_cache`
+`getDashboardData`, `getReport`, `getNotifications` in `unstable_cache`
 (45–60s) tagged `agency-data`; `logActivity()` → `bustAgencyData()` drops
 that tag on every write. `getSessionContext` and `resolveAgencyOverhead`
 are wrapped in React `cache()` for per-request dedup.
@@ -214,7 +225,11 @@ RLS+roles · Clients · Settings · Analytics · Client portal · Invoice email 
 CI · team invites · overhead→project allocation · milestones CRUD ·
 forgot/reset-password · printable invoice PDF · notifications bell ·
 global search · activity feed · account page · first-run state · caching ·
-DB co-located in Singapore · deployed to Vercel (powerhouse-co.vercel.app).
+DB co-located in Singapore · deployed to Vercel (powerhouse-co.vercel.app) ·
+per-agency reply-to · period-scoped /analytics (FY presets + custom range,
+prior-period deltas, payment-method mix, GST-by-quarter, aging, DSO,
+expense-by-category, client concentration) · cross-project milestones +
+notification kinds · invoice viewedDate.
 Time tracking is intentionally OUT (see Profit calculation above).
 Next: portal "pay now" is parked (payments handled outside the app).
 
@@ -233,15 +248,38 @@ Next: portal "pay now" is parked (payments handled outside the app).
   the status and returns a note. Needs `RESEND_FROM` (verified sender) +
   `NEXT_PUBLIC_APP_URL` for real delivery.
 
-### Analytics (`/analytics`, any signed-in user)
+### Analytics (`/analytics`, any signed-in user) — the reporting hub
 
-`src/lib/queries/analytics.ts` `getAnalytics(agencyId, months)` — months is
-3/6/12 (`?months=`). Cash flow = payments received vs (project expenses +
-company overhead) by month, both by date (team cost has no date so it's
-excluded from the monthly view — that view is cash movement, the
-profitability table below is full cost). Profitability table = every project
-with the full cost breakdown, ranked by margin, CSV via
-`GET /api/analytics/export` (`profitabilityCsv()` is pure + unit-tested).
+**Period-scoped.** `src/lib/period.ts` (pure, client-safe) `resolvePeriod`
+turns `?period=` (`this_month` | `last_month` | `this_quarter` |
+`last_quarter` | `this_fy` | `last_fy` | `ytd` | `last_12_months` | `custom`
+with `?from=&to=`) into a `[from, to)` window on the **Indian FY (Apr–Mar)**
+plus the comparable prior window and a `cacheKey`. `parsePeriodParams`
+(`src/lib/period-params.ts`) reads the search params; `<PeriodSelect>` writes
+them. **Cached adapters take `PeriodInput` (strings), never a `Date`** — the
+`unstable_cache` key would otherwise explode.
+
+`getReport(agencyId, periodInput)` (`src/lib/queries/report.ts`,
+`cacheAgencyRead(fetchReport, ["report"], 60)`) does ONE fetch over
+`[prev.from, to)` and calls the **pure builders** in `src/lib/reports/`:
+- `period-summary` — money in / out / net + margin, each with a vs-prior delta
+  (`deltaPct: null` when the prior window is empty → render "—")
+- `payment-methods` — mix by method over the window
+- `gst` — tax collected by FY quarter + this-period total; `tax = amount −
+  amount/(1+rate/100)` on the tax-inclusive `invoices.amount` (reconciled
+  against `invoiceTotals` in a test)
+- `aging` — outstanding receivables in current / 1-30 / 31-60 / 61-90 / 90+,
+  worst clients
+- `dso` — days from issue to payment for invoices paid in the window (mean /
+  median / ₹-weighted, slowest)
+- `expense-categories` — project & company spend by category + a company trend
+- `client-ranking` — revenue concentration (share, cumulative %, top-N, HHI)
+- `milestone-rollup` (via `getMilestoneRollup`) — completed in period +
+  on-time rate
+
+`src/lib/queries/analytics.ts` is now **pure helpers only** (`buildProfitability`,
+`serviceMixByContract`, `profitabilityCsv` — CSV has a Progress column, honours
+`?period=`). No more `AnalyticsPeriod` / `AnalyticsPeriodSelect`.
 
 ### Settings (`/settings`, `settings:manage` = admin only)
 
@@ -314,3 +352,6 @@ pages. Invoice numbers: `INV-YYYY-NNN`, unique per agency, allocated by
 `nextInvoiceNumber()` with retry-on-conflict.
 Amount/issue date lock once an invoice leaves draft. Cancel is blocked
 while payments exist; only drafts can be hard-deleted.
+`Invoice.viewedDate` is stamped by `getPortalData()` on the client's first
+portal view (best-effort `updateMany`); shown on the invoice detail timeline
+as "Viewed by client …".
