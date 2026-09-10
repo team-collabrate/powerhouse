@@ -69,7 +69,7 @@ export default async function DashboardPage() {
             )}
           </div>
           <p className="mt-1 text-[13px] text-ink-3">
-            Here&apos;s how the studio is tracking this month.
+            Here&apos;s how the studio is tracking this year.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -88,11 +88,11 @@ export default async function DashboardPage() {
       {/* Row 2 */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <Card className="lg:col-span-5">
-          <CardHeader title="Profit Performance" subtitle="Last 30 days" />
+          <CardHeader title="Profit Performance" subtitle="Last 12 months" />
           <ProfitAreaChart series={view.profit} />
         </Card>
         <Card className="lg:col-span-4">
-          <CardHeader title="Revenue by Service" subtitle="This quarter" />
+          <CardHeader title="Revenue by Service" subtitle="Share of contract value" />
           <ServiceDonut slices={view.services} />
         </Card>
         <Card className="lg:col-span-3">

@@ -47,7 +47,7 @@ export interface DashInvoiceInput {
 export interface DashInputs {
   projects: DashProjectInput[];
   invoices: DashInvoiceInput[]; // newest first
-  payments: { amount: number; date: Date }[]; // last 30 days
+  payments: { amount: number; date: Date }[]; // all-time
   clients: { createdAt: Date }[]; // last 6 months
   monthlyRevenueTarget: number;
   overheadMethod: string;
@@ -61,15 +61,6 @@ export interface DashInputs {
 
 const money = (v: number) => formatCurrency(v);
 
-function pctChange(current: number, previous: number) {
-  if (previous <= 0) return undefined;
-  const change = ((current - previous) / previous) * 100;
-  return {
-    value: `${change >= 0 ? "+" : ""}${change.toFixed(1)}%`,
-    direction: change >= 0 ? ("up" as const) : ("down" as const),
-  };
-}
-
 function ceilCurrency(v: number) {
   if (v <= 0) return 1000;
   return Math.ceil((v * 1.12) / 500) * 500;
@@ -80,13 +71,8 @@ const monthKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}`;
 export function buildDashboardView(input: DashInputs): DashboardView {
   const { projects, invoices, payments, clients, greetingName, now } = input;
 
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  // month-to-date comparison uses the SAME day-of-month window last month
-  const prevMonthSameDay = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-  const windowStart = new Date(now);
-  windowStart.setDate(now.getDate() - 29);
-  windowStart.setHours(0, 0, 0, 0);
+  const year = now.getFullYear();
+  const yearStart = new Date(year, 0, 1);
   const thirtyDaysAgo = new Date(now);
   thirtyDaysAgo.setDate(now.getDate() - 30);
 
@@ -117,19 +103,28 @@ export function buildDashboardView(input: DashInputs): DashboardView {
       expenses: p.expenses.map((e) => ({ amount: e.amount })),
     }),
   }));
-  const active = withProfit.filter((x) => x.project.status === "active");
+  const nonClosed = withProfit.filter((x) => x.project.status !== "closed");
+  const activeCount = nonClosed.filter(
+    (x) => x.project.status === "active",
+  ).length;
 
-  // ---- KPIs ----
-  const revenueMtd = payments
-    .filter((p) => p.date >= monthStart)
+  // ---- KPIs (all-time / year-to-date — this is a low-volume, project-based
+  // business, so a monthly view reads as mostly zeros) ----
+  const revenueAllTime = payments.reduce((s, p) => s + p.amount, 0);
+  const revenueThisYear = payments
+    .filter((p) => p.date >= yearStart)
     .reduce((s, p) => s + p.amount, 0);
-  const revenuePrev = payments
-    .filter((p) => p.date >= prevMonthStart && p.date < prevMonthSameDay)
-    .reduce((s, p) => s + p.amount, 0);
-  const avgMargin =
-    active.length > 0
-      ? active.reduce((s, x) => s + x.profitMargin, 0) / active.length
-      : 0;
+
+  // portfolio margin = Σ profit / Σ contract across every open project
+  const marginBase = nonClosed.filter((x) => x.project.contractValue > 0);
+  const portfolioContract = marginBase.reduce(
+    (s, x) => s + x.project.contractValue,
+    0,
+  );
+  const portfolioProfit = marginBase.reduce((s, x) => s + x.profit, 0);
+  const portfolioMargin =
+    portfolioContract > 0 ? (portfolioProfit / portfolioContract) * 100 : 0;
+
   const invoiceViews = invoices.map((i) => ({
     ...i,
     display: displayInvoiceStatus(i.status, i.dueDate, i.amount, i.amountPaid, now),
@@ -138,55 +133,48 @@ export function buildDashboardView(input: DashInputs): DashboardView {
   const outstanding = invoiceViews
     .filter((i) => isOutstanding(i.display))
     .reduce((s, i) => s + i.balance, 0);
-  const newThisMonth = projects.filter((p) => p.createdAt >= monthStart).length;
+  const newThisYear = projects.filter((p) => p.createdAt >= yearStart).length;
 
+  const annualTarget = input.monthlyRevenueTarget * 12;
   const targetPct =
-    input.monthlyRevenueTarget > 0
-      ? (revenueMtd / input.monthlyRevenueTarget) * 100
-      : 0;
+    annualTarget > 0 ? (revenueThisYear / annualTarget) * 100 : 0;
 
   const kpis: DashboardView["kpis"] = [
     {
       id: "revenue",
-      label: "Revenue (MTD)",
-      value: money(revenueMtd),
-      delta: pctChange(revenueMtd, revenuePrev),
+      label: "Revenue (all-time)",
+      value: money(revenueAllTime),
       icon: "trending-up",
       hint:
-        input.monthlyRevenueTarget > 0
-          ? `${targetPct.toFixed(0)}% of ${money(input.monthlyRevenueTarget)} target`
-          : undefined,
-      progress:
-        input.monthlyRevenueTarget > 0
-          ? Math.min(100, targetPct)
-          : undefined,
+        annualTarget > 0
+          ? `${money(revenueThisYear)} in ${year} · ${targetPct.toFixed(0)}% of target`
+          : `${money(revenueThisYear)} received in ${year}`,
+      progress: annualTarget > 0 ? Math.min(100, targetPct) : undefined,
     },
     {
       id: "projects",
-      label: "Active Projects",
-      value: String(active.length),
+      label: "Projects",
+      value: String(nonClosed.length),
       delta:
-        newThisMonth > 0
-          ? { value: `+${newThisMonth}`, direction: "up" }
+        newThisYear > 0
+          ? { value: `+${newThisYear}`, direction: "up" }
           : undefined,
       icon: "briefcase",
+      hint: activeCount > 0 ? `${activeCount} in progress` : "all delivered",
     },
     {
       id: "margin",
-      label: "Avg. Profit Margin",
-      value: `${avgMargin.toFixed(1)}%`,
+      label: "Profit Margin",
+      value: `${portfolioMargin.toFixed(1)}%`,
       icon: "percent",
     },
     { id: "outstanding", label: "Outstanding", value: money(outstanding), icon: "clock" },
   ];
 
-  // ---- profit series: rolling 7-day totals sampled every ~2.5 days ----
-  // Revenue = payments received in the window. Cost = project expenses in the
-  // window + each active project's team cost amortised linearly across its
-  // start→deadline span (fallback 90 days).
-  const BUCKETS = 12;
-  const bucketDays = 30 / BUCKETS;
-  const TRAIL_MS = 7 * 24 * 3600 * 1000;
+  // ---- profit series: the trailing 12 calendar months ----
+  // Revenue = payments received that month. Cost = project expenses that month
+  // + each open project's (team cost + allocated overhead) amortised linearly
+  // across its active span and attributed to the months it overlaps.
   const DAY_MS = 24 * 3600 * 1000;
 
   const expenseEvents = projects.flatMap((p) =>
@@ -198,42 +186,58 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     to: Date,
   ) => rows.filter((r) => r.date >= from && r.date < to).reduce((s, r) => s + r.amount, 0);
 
-  const spanDays = (p: DashProjectInput) =>
-    p.startDate && p.deadline
-      ? Math.min(
-          365,
-          Math.max(7, (p.deadline.getTime() - p.startDate.getTime()) / DAY_MS),
-        )
-      : 90;
-  const openProjects = projects.filter((p) => p.status !== "closed");
-  const totalDailyLabour = openProjects
-    .filter((p) => p.teamCost > 0)
-    .reduce((s, p) => s + p.teamCost / spanDays(p), 0);
-  // allocated overhead is a whole-project figure — amortise it across the
-  // same span as team cost so the chart's cost line stays consistent.
-  const totalDailyOverhead = openProjects.reduce(
-    (s, p) => s + (overheadMap.get(p.id) ?? 0) / spanDays(p),
-    0,
-  );
+  const costSpans = projects
+    .filter((p) => p.status !== "closed")
+    .map((p) => {
+      const total = p.teamCost + (overheadMap.get(p.id) ?? 0);
+      let from: Date;
+      let to: Date;
+      if (p.startDate && p.deadline && p.deadline > p.startDate) {
+        from = p.startDate;
+        to = p.deadline;
+      } else if (p.startDate) {
+        from = p.startDate;
+        to = new Date(p.startDate.getTime() + 90 * DAY_MS);
+      } else {
+        to = now;
+        from = new Date(now.getTime() - 90 * DAY_MS);
+      }
+      const spanDays = Math.min(
+        365,
+        Math.max(7, (to.getTime() - from.getTime()) / DAY_MS),
+      );
+      return { from, to, dailyCost: total / spanDays };
+    });
+
+  const overlapDays = (aFrom: Date, aTo: Date, bFrom: Date, bTo: Date) => {
+    const lo = Math.max(aFrom.getTime(), bFrom.getTime());
+    const hi = Math.min(aTo.getTime(), bTo.getTime());
+    return hi > lo ? (hi - lo) / DAY_MS : 0;
+  };
 
   const points: ProfitPoint[] = [];
-  for (let b = 1; b <= BUCKETS; b++) {
-    const end = new Date(windowStart);
-    end.setDate(windowStart.getDate() + Math.round(b * bucketDays));
-    const from = new Date(Math.max(windowStart.getTime(), end.getTime() - TRAIL_MS));
-    const windowDays = (end.getTime() - from.getTime()) / DAY_MS;
+  for (let m = 11; m >= 0; m--) {
+    const mStart = new Date(year, now.getMonth() - m, 1);
+    const mEnd = new Date(year, now.getMonth() - m + 1, 1);
 
     const revenue = sumIn(
       payments.map((p) => ({ date: p.date, amount: p.amount })),
-      from,
-      end,
+      mStart,
+      mEnd,
     );
-    const cost =
-      sumIn(expenseEvents, from, end) +
-      (totalDailyLabour + totalDailyOverhead) * windowDays;
+    // don't recognise cost past today — the current month is still partial
+    const mCap = mEnd > now ? now : mEnd;
+    const amortised = costSpans.reduce(
+      (s, c) => s + c.dailyCost * overlapDays(c.from, c.to, mStart, mCap),
+      0,
+    );
+    const cost = sumIn(expenseEvents, mStart, mEnd) + amortised;
 
     points.push({
-      label: end.toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
+      label: mStart.toLocaleDateString("en-IN", {
+        month: "short",
+        year: mStart.getMonth() === 0 || m === 11 ? "2-digit" : undefined,
+      }),
       revenue: Math.round(revenue),
       cost: Math.round(cost),
       profit: Math.round(revenue - cost),
@@ -262,7 +266,7 @@ export function buildDashboardView(input: DashInputs): DashboardView {
       : [];
 
   // ---- top projects by margin ----
-  const topProjects = [...active]
+  const topProjects = [...nonClosed]
     .filter((x) => x.project.contractValue > 0)
     .sort((a, b) => b.profitMargin - a.profitMargin)
     .slice(0, 3)
@@ -304,8 +308,13 @@ export function buildDashboardView(input: DashInputs): DashboardView {
 
   // ---- insights ----
   const insights: DashboardView["insights"] = [];
-  const underMargin = [...active]
-    .filter((x) => x.project.contractValue > 0 && x.profitMargin < 15)
+  const underMargin = [...nonClosed]
+    .filter(
+      (x) =>
+        x.project.status !== "delivered" &&
+        x.project.contractValue > 0 &&
+        x.profitMargin < 15,
+    )
     .sort((a, b) => a.profitMargin - b.profitMargin)[0];
   if (underMargin) {
     insights.push({
@@ -376,8 +385,7 @@ export async function fetchDashboardData(
   agencyId: string,
 ): Promise<DashboardView> {
   const now = new Date();
-  // fetch payments back to the start of last month so month-over-month works
-  const paymentsSince = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  // the dashboard is all-time / trailing-12-months, so pull every payment
   const sixMonthsStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
   const [projects, invoices, payments, clients, agency, overhead] =
@@ -413,7 +421,7 @@ export async function fetchDashboardData(
       },
     }),
     prisma.payment.findMany({
-      where: { invoice: { agencyId }, paymentDate: { gte: paymentsSince } },
+      where: { invoice: { agencyId } },
       select: { amount: true, paymentDate: true },
     }),
     prisma.client.findMany({

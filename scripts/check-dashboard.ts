@@ -107,18 +107,29 @@ function check(label: string, cond: boolean, detail?: unknown) {
 console.log("buildDashboardView:");
 check("greeting passes through", v.greetingName === "Bella");
 check("not flagged as demo", v.isDemo === false);
-check("revenue MTD = ₹25,000", v.kpis[0].value === "₹25,000", v.kpis[0].value);
 check(
-  "revenue delta = +150.0% up (same-period MoM, ignores Aug 28)",
-  v.kpis[0].delta?.value === "+150.0%" && v.kpis[0].delta?.direction === "up",
-  v.kpis[0].delta,
+  "revenue all-time = ₹1,34,000 (25k + 10k + 99k)",
+  v.kpis[0].value === "₹1,34,000",
+  v.kpis[0].value,
 );
-check("active projects = 2", v.kpis[1].value === "2", v.kpis[1].value);
-check("new-this-month delta = +1", v.kpis[1].delta?.value === "+1", v.kpis[1].delta);
+check("revenue KPI has no delta", v.kpis[0].delta === undefined, v.kpis[0].delta);
+check("projects (non-closed) = 3", v.kpis[1].value === "3", v.kpis[1].value);
+check("new-this-year delta = +3", v.kpis[1].delta?.value === "+3", v.kpis[1].delta);
+check(
+  "projects hint = '2 in progress'",
+  v.kpis[1].hint === "2 in progress",
+  v.kpis[1].hint,
+);
+check(
+  "portfolio margin = 39.1% (62.5k / 160k)",
+  v.kpis[2].value === "39.1%",
+  v.kpis[2].value,
+);
 check("outstanding = ₹21,000 (12k + 9k)", v.kpis[3].value === "₹21,000", v.kpis[3].value);
 check(
-  "revenue KPI shows target progress (25k / 50k = 50%)",
-  v.kpis[0].progress === 50 && v.kpis[0].hint === "50% of ₹50,000 target",
+  "revenue KPI shows annual-target progress (134k / (50k×12) = 22%)",
+  Math.round(v.kpis[0].progress ?? 0) === 22 &&
+    v.kpis[0].hint === "₹1,34,000 in 2026 · 22% of target",
   { progress: v.kpis[0].progress, hint: v.kpis[0].hint },
 );
 check("profit series has 12 points", v.profit.points.length === 12, v.profit.points.length);
@@ -129,7 +140,11 @@ check(
   v.services,
 );
 check("top projects sorted by margin desc", v.topProjects.every((p, i, a) => i === 0 || a[i - 1].margin >= p.margin));
-check("healthy project ranks first", v.topProjects[0]?.name === "Healthy Project", v.topProjects[0]);
+check(
+  "top projects span all open projects, not just active (Old Delivered @ 50% ranks first)",
+  v.topProjects[0]?.name === "Old Delivered",
+  v.topProjects[0],
+);
 check("recent invoices: 3 rows", v.recentInvoices.length === 3);
 check(
   "stale sent invoice shows as overdue",

@@ -62,7 +62,7 @@ export function ProfitAreaChart({ series }: { series: ProfitSeriesView }) {
           className="w-full"
           style={{ height: 220 }}
           role="img"
-          aria-label="Revenue, cost and profit over the last 30 days"
+          aria-label="Revenue, cost and profit over the last 12 months"
         >
           <defs>
             <linearGradient id="profitFill" x1="0" y1="0" x2="0" y2="1">

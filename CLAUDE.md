@@ -51,9 +51,11 @@ whole-project profit. Wired into `listProjects`, `getProject`
 (`cost.overheadSource`), `getAnalytics` (`AnalyticsResult.overhead`),
 `getClient`, and `buildDashboardView`.
 
-The dashboard profit chart amortises each non-closed project's `teamCost` **and
-its allocated overhead** linearly across its start→deadline span (fallback 90
-days) to get a daily cost figure.
+The dashboard profit chart (trailing 12 **months**) amortises each non-closed
+project's `teamCost` **and its allocated overhead** linearly across its
+start→deadline span (fallback: 90 days from `startDate`, else the last 90 days)
+and attributes it to the months it overlaps; cost is never recognised past
+today, so the current month reads as partial.
 
 ## Multi-tenancy & permissions
 
@@ -108,8 +110,19 @@ page falls back to `DEMO_DASHBOARD` (`src/lib/demo-data.ts`) and shows a
 Charts are hand-built inline SVG in `src/components/dashboard/` (no chart
 lib); every component takes a typed slice of `DashboardView` as props.
 
-`npm run test` runs `scripts/check-dashboard.ts` — 20 assertions against
-`buildDashboardView` with synthetic rows, no DB needed.
+**Framing is yearly / all-time, not monthly** — this is a low-volume,
+project-based business, so a month-to-date view read as mostly zeros.
+Revenue KPI = all-time payments received (hint: this-year figure, and % of
+`monthlyRevenueTarget × 12` when a target is set). Projects KPI = count of
+non-closed projects (`+N` = created this year, hint = `N in progress` / `all
+delivered`). Profit Margin KPI = portfolio-weighted `Σ profit / Σ contract`
+across every open project (not a simple average, and not active-only). Top
+Projects and the under-margin insight also span all non-closed projects (the
+insight still skips `delivered`). Profit chart = trailing 12 months (see
+Profit calculation). `getDashboardData` now pulls **all** payments.
+
+`npm run test` runs `scripts/check-dashboard.ts` — pure-function assertions
+against `buildDashboardView` with synthetic rows, no DB needed.
 
 Aesthetic rules: purple accent only on primary action / active nav / primary
 chart series; green only on positive deltas & paid state; hairline borders,

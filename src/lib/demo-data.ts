@@ -33,25 +33,24 @@ export const DEMO_DASHBOARD: DashboardView = {
   kpis: [
     {
       id: "revenue",
-      label: "Revenue (MTD)",
+      label: "Revenue (all-time)",
       value: "₹51,20,000",
-      delta: { value: "+12.4%", direction: "up" },
       icon: "trending-up",
-      hint: "85% of ₹60,00,000 target",
-      progress: 85,
+      hint: "₹34,80,000 in 2026 · 58% of target",
+      progress: 58,
     },
     {
       id: "projects",
-      label: "Active Projects",
+      label: "Projects",
       value: "18",
-      delta: { value: "+3", direction: "up" },
+      delta: { value: "+11", direction: "up" },
       icon: "briefcase",
+      hint: "5 in progress",
     },
     {
       id: "margin",
-      label: "Avg. Profit Margin",
+      label: "Profit Margin",
       value: "42.8%",
-      delta: { value: "+5.2%", direction: "up" },
       icon: "percent",
     },
     {
