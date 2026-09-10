@@ -82,6 +82,20 @@ export interface InsightView {
   icon: InsightIcon;
 }
 
+export interface DeliverableRow {
+  id: string;
+  name: string;
+  projectId: string;
+  projectName: string;
+  /** whole days from now; negative = overdue */
+  daysAway: number;
+}
+
+export interface DeliverablesView {
+  overdue: DeliverableRow[];
+  upcoming: DeliverableRow[];
+}
+
 export interface DashboardView {
   greetingName: string;
   kpis: KpiView[];
@@ -91,6 +105,7 @@ export interface DashboardView {
   clientGrowth: ClientGrowthView;
   recentInvoices: InvoiceRowView[];
   insights: InsightView[];
+  deliverables: DeliverablesView;
   /** true when served from static placeholder data (no DB / no rows yet) */
   isDemo: boolean;
   /** true when the agency exists but has no projects or invoices yet */

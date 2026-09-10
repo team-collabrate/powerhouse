@@ -13,6 +13,10 @@ import {
   type InvoiceRowView,
   type ProfitPoint,
 } from "@/lib/dashboard-types";
+import {
+  buildMilestoneRollup,
+  type MilestoneRollupInput,
+} from "@/lib/reports/milestone-rollup";
 
 /* ------------------------------------------------------------------ *
  * Normalized inputs — the pure builder below works off these so it
@@ -49,6 +53,7 @@ export interface DashInputs {
   invoices: DashInvoiceInput[]; // newest first
   payments: { amount: number; date: Date }[]; // all-time
   clients: { createdAt: Date }[]; // last 6 months
+  milestones: MilestoneRollupInput[];
   monthlyRevenueTarget: number;
   overheadMethod: string;
   overheadRate: number; // fraction 0..1
@@ -347,6 +352,13 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     });
   }
 
+  // ---- upcoming deliverables (cross-project milestones) ----
+  const rollup = buildMilestoneRollup(input.milestones, now);
+  const deliverables = {
+    overdue: rollup.overdue.slice(0, 5).map(pickDeliverable),
+    upcoming: rollup.upcoming.slice(0, 6).map(pickDeliverable),
+  };
+
   return {
     greetingName,
     isDemo: false,
@@ -358,6 +370,23 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     clientGrowth,
     recentInvoices,
     insights,
+    deliverables,
+  };
+}
+
+function pickDeliverable(r: {
+  id: string;
+  name: string;
+  projectId: string;
+  projectName: string;
+  daysAway: number;
+}) {
+  return {
+    id: r.id,
+    name: r.name,
+    projectId: r.projectId,
+    projectName: r.projectName,
+    daysAway: r.daysAway,
   };
 }
 
@@ -388,7 +417,7 @@ export async function fetchDashboardData(
   // the dashboard is all-time / trailing-12-months, so pull every payment
   const sixMonthsStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-  const [projects, invoices, payments, clients, agency, overhead] =
+  const [projects, invoices, payments, clients, milestones, agency, overhead] =
     await Promise.all([
     prisma.project.findMany({
       where: { agencyId },
@@ -427,6 +456,17 @@ export async function fetchDashboardData(
     prisma.client.findMany({
       where: { agencyId, createdAt: { gte: sixMonthsStart } },
       select: { createdAt: true },
+    }),
+    prisma.milestone.findMany({
+      where: { project: { agencyId } },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        dueDate: true,
+        completedDate: true,
+        project: { select: { id: true, name: true } },
+      },
     }),
     prisma.agency.findUnique({
       where: { id: agencyId },
@@ -469,6 +509,15 @@ export async function fetchDashboardData(
       date: p.paymentDate,
     })),
     clients,
+    milestones: milestones.map((m) => ({
+      id: m.id,
+      name: m.name,
+      projectId: m.project.id,
+      projectName: m.project.name,
+      status: m.status,
+      dueDate: m.dueDate,
+      completedDate: m.completedDate,
+    })),
     monthlyRevenueTarget: num(agency?.monthlyRevenueTarget),
     overheadMethod: overhead.method,
     overheadRate: overhead.percentRate,

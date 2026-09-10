@@ -109,4 +109,31 @@ export const DEMO_DASHBOARD: DashboardView = {
       icon: "file-text",
     },
   ],
+  deliverables: {
+    overdue: [
+      {
+        id: "d1",
+        name: "Design sign-off",
+        projectId: "",
+        projectName: "Surya Labs App Launch",
+        daysAway: -3,
+      },
+    ],
+    upcoming: [
+      {
+        id: "d2",
+        name: "Beta release",
+        projectId: "",
+        projectName: "Kirana Fresh Rebrand",
+        daysAway: 4,
+      },
+      {
+        id: "d3",
+        name: "Content handover",
+        projectId: "",
+        projectName: "Bhoomi Storefront",
+        daysAway: 11,
+      },
+    ],
+  },
 };

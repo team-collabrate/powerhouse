@@ -53,6 +53,7 @@ import {
   buildClientRanking,
   type ClientRanking,
 } from "@/lib/reports/client-ranking";
+import { getMilestoneRollup, type MilestoneRollup } from "@/lib/queries/milestone-rollup";
 
 const num = (d: unknown): number => (d == null ? 0 : Number(d));
 
@@ -76,6 +77,7 @@ export interface ReportResult {
   expenses: LabelledExpenses;
   companyExpenseTrend: ExpenseTrendPoint[];
   clients: ClientRanking;
+  milestones: MilestoneRollup;
 }
 
 interface LabelledExpenses {
@@ -110,8 +112,15 @@ export async function fetchReport(
   const { from, to } = p;
   const scanFrom = p.prev.from; // covers current + prior window
 
-  const [invoices, projExpenses, companyExpenses, projects, clients, overhead] =
-    await Promise.all([
+  const [
+    invoices,
+    projExpenses,
+    companyExpenses,
+    projects,
+    clients,
+    milestones,
+    overhead,
+  ] = await Promise.all([
       prisma.invoice.findMany({
         where: { agencyId },
         select: {
@@ -162,6 +171,7 @@ export async function fetchReport(
           projects: { select: { contractValue: true } },
         },
       }),
+      getMilestoneRollup(agencyId, { from, to }),
       resolveAgencyOverhead(agencyId),
     ]);
 
@@ -379,5 +389,6 @@ export async function fetchReport(
     expenses,
     companyExpenseTrend,
     clients: clientRanking,
+    milestones,
   };
 }

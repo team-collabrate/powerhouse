@@ -2,7 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Bell, Clock, TrendingDown } from "react-feather";
+import {
+  AlertTriangle,
+  Bell,
+  Clock,
+  FileText,
+  Flag,
+  Target,
+  TrendingDown,
+} from "react-feather";
 import type {
   NotificationItem,
   NotificationsData,
@@ -13,6 +21,10 @@ const iconFor = {
   due_soon: Clock,
   under_margin: TrendingDown,
   past_deadline: Clock,
+  milestone_overdue: Flag,
+  milestone_due: Flag,
+  draft_aging: FileText,
+  revenue_shortfall: Target,
 } as const;
 
 export function NotificationsBell({ data }: { data: NotificationsData }) {

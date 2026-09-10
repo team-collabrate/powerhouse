@@ -13,6 +13,7 @@ import { AgingChart } from "@/components/analytics/AgingChart";
 import { GstTable } from "@/components/analytics/GstTable";
 import { DsoCard } from "@/components/analytics/DsoCard";
 import { ClientConcentration } from "@/components/analytics/ClientConcentration";
+import { DeliverablesSection } from "@/components/analytics/DeliverablesSection";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ const SECTIONS = [
   ["dso", "Collection speed"],
   ["expenses", "Expenses"],
   ["clients", "Clients"],
+  ["deliverables", "Deliverables"],
 ] as const;
 
 export default async function AnalyticsPage({
@@ -205,6 +207,10 @@ export default async function AnalyticsPage({
 
       <Section id="clients" title="Client concentration" subtitle={`Revenue share in ${period.label}`}>
         <ClientConcentration data={r.clients} />
+      </Section>
+
+      <Section id="deliverables" title="Deliverables" subtitle="Milestones across all projects">
+        <DeliverablesSection data={r.milestones} periodLabel={period.label} />
       </Section>
     </div>
   );

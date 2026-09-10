@@ -35,6 +35,14 @@ import {
   buildCompanyExpenseTrend,
 } from "@/lib/reports/expense-categories";
 import { buildClientRanking } from "@/lib/reports/client-ranking";
+import { buildMilestoneRollup } from "@/lib/reports/milestone-rollup";
+import {
+  classifyInvoice,
+  classifyMilestone,
+  classifyDraftInvoice,
+  classifyRevenueShortfall,
+  assembleNotifications,
+} from "@/lib/reports/notifications";
 
 const now = new Date("2026-09-15T12:00:00Z");
 const d = (offset: number) => {
@@ -110,6 +118,35 @@ const input: DashInputs = {
     { createdAt: monthsBack(1) },
     { createdAt: d(-2) }, // this month
     { createdAt: d(-1) },
+  ],
+  milestones: [
+    {
+      id: "m-late",
+      name: "Wireframes",
+      projectId: "p-healthy",
+      projectName: "Healthy Project",
+      status: "in_progress",
+      dueDate: d(-4),
+      completedDate: null,
+    },
+    {
+      id: "m-soon",
+      name: "Beta",
+      projectId: "p-thin",
+      projectName: "Thin Margin Project",
+      status: "pending",
+      dueDate: d(10),
+      completedDate: null,
+    },
+    {
+      id: "m-done",
+      name: "Kickoff",
+      projectId: "p-old",
+      projectName: "Old Delivered",
+      status: "completed",
+      dueDate: monthsBack(4),
+      completedDate: monthsBack(4),
+    },
   ],
 };
 
@@ -189,6 +226,14 @@ check(
 check("client growth: 6 bars", v.clientGrowth.bars.length === 6);
 check("client growth netNew = 4", v.clientGrowth.netNew === 4, v.clientGrowth.netNew);
 check("last bar highlighted", v.clientGrowth.bars[5].highlight === true);
+check(
+  "deliverables: 1 overdue (Wireframes), 1 upcoming (Beta), completed excluded",
+  v.deliverables.overdue.length === 1 &&
+    v.deliverables.overdue[0].name === "Wireframes" &&
+    v.deliverables.upcoming.length === 1 &&
+    v.deliverables.upcoming[0].name === "Beta",
+  v.deliverables,
+);
 
 /* ------------------------------------------------------------------ *
  * buildDashboardView — yearly / all-time framing.
@@ -225,6 +270,7 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
   invoices: [],
   payments: [],
   clients: [],
+  milestones: [],
   ...o,
 });
 
@@ -719,6 +765,115 @@ check(
       rank.top3Pct === 100 &&
       rank.hhi === 4_600,
     rank,
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * milestones + notifications (P2)
+ * ------------------------------------------------------------------ */
+console.log("\nmilestones + notifications:");
+
+{
+  const mNow = new Date(2026, 8, 15);
+  const ms = [
+    { id: "a", name: "A", projectId: "p", projectName: "P1", status: "in_progress", dueDate: new Date(2026, 8, 10), completedDate: null },
+    { id: "b", name: "B", projectId: "p", projectName: "P1", status: "pending", dueDate: new Date(2026, 8, 25), completedDate: null },
+    { id: "c", name: "C", projectId: "p", projectName: "P1", status: "pending", dueDate: new Date(2026, 10, 1), completedDate: null },
+    { id: "d", name: "D", projectId: "p", projectName: "P2", status: "completed", dueDate: new Date(2026, 7, 1), completedDate: new Date(2026, 6, 28) },
+    { id: "e", name: "E", projectId: "p", projectName: "P2", status: "completed", dueDate: new Date(2026, 7, 1), completedDate: new Date(2026, 7, 10) },
+  ];
+  const roll = buildMilestoneRollup(ms, mNow);
+  check(
+    "milestone rollup: 1 overdue (A), 1 upcoming (B, within 30d), C beyond horizon",
+    roll.overdue.length === 1 &&
+      roll.overdue[0].id === "a" &&
+      roll.upcoming.length === 1 &&
+      roll.upcoming[0].id === "b" &&
+      roll.completedInPeriod === 2 &&
+      roll.onTimeRate === 50,
+    roll,
+  );
+  const rollP = buildMilestoneRollup(ms, mNow, {
+    from: new Date(2026, 6, 1),
+    to: new Date(2026, 7, 1),
+  });
+  check(
+    "milestone rollup: completedInPeriod respects the window (July → 1)",
+    rollP.completedInPeriod === 1,
+    rollP.completedInPeriod,
+  );
+}
+
+{
+  const nNow = new Date(2026, 8, 15);
+  check(
+    "classifyInvoice: overdue → high, days counted",
+    classifyInvoice(
+      { id: "x", invoiceNumber: "INV-1", clientName: "C", balance: 5000, dueDate: new Date(2026, 8, 1), display: "overdue" },
+      nNow,
+    )?.kind === "overdue",
+  );
+  check(
+    "classifyInvoice: due within 5 days → due_soon medium",
+    classifyInvoice(
+      { id: "x", invoiceNumber: "INV-1", clientName: "C", balance: 3000, dueDate: new Date(2026, 8, 18), display: "sent" },
+      nNow,
+    )?.kind === "due_soon",
+  );
+  check(
+    "classifyInvoice: zero balance → null",
+    classifyInvoice(
+      { id: "x", invoiceNumber: "INV-1", clientName: "C", balance: 0, dueDate: new Date(2026, 8, 1), display: "overdue" },
+      nNow,
+    ) === null,
+  );
+  check(
+    "classifyMilestone: past due, not completed → milestone_overdue high",
+    classifyMilestone(
+      { id: "m", name: "X", projectId: "p", projectName: "P", status: "pending", dueDate: new Date(2026, 8, 5) },
+      nNow,
+    )?.severity === "high",
+  );
+  check(
+    "classifyMilestone: completed → null",
+    classifyMilestone(
+      { id: "m", name: "X", projectId: "p", projectName: "P", status: "completed", dueDate: new Date(2026, 8, 5) },
+      nNow,
+    ) === null,
+  );
+  check(
+    "classifyDraftInvoice: 14+ days old → draft_aging, else null",
+    classifyDraftInvoice(
+      { id: "d", invoiceNumber: "INV-D", clientName: "C", createdAt: new Date(2026, 7, 20) },
+      nNow,
+    )?.kind === "draft_aging" &&
+      classifyDraftInvoice(
+        { id: "d", invoiceNumber: "INV-D", clientName: "C", createdAt: new Date(2026, 8, 10) },
+        nNow,
+      ) === null,
+  );
+  check(
+    "classifyRevenueShortfall: last week + under 60% → fires; earlier → null",
+    classifyRevenueShortfall({ monthlyTarget: 100_000, mtdReceived: 30_000, now: new Date(2026, 8, 25) })?.kind ===
+      "revenue_shortfall" &&
+      classifyRevenueShortfall({ monthlyTarget: 100_000, mtdReceived: 30_000, now: new Date(2026, 8, 10) }) === null &&
+      classifyRevenueShortfall({ monthlyTarget: 100_000, mtdReceived: 70_000, now: new Date(2026, 8, 25) }) === null &&
+      classifyRevenueShortfall({ monthlyTarget: 0, mtdReceived: 0, now: new Date(2026, 8, 25) }) === null,
+  );
+  const asm = assembleNotifications([
+    { id: "1", kind: "overdue", title: "a", detail: "", href: "", severity: "high", sortAt: 10 },
+    null,
+    { id: "2", kind: "due_soon", title: "b", detail: "", href: "", severity: "medium", sortAt: 99 },
+    { id: "3", kind: "under_margin", title: "c", detail: "", href: "", severity: "high", sortAt: 5 },
+  ]);
+  check(
+    "assembleNotifications: high first, nulls dropped, count = 2",
+    asm.items.length === 3 &&
+      asm.items[0].severity === "high" &&
+      asm.items[1].severity === "high" &&
+      asm.items[2].severity === "medium" &&
+      asm.count === 2,
+    asm,
   );
 }
 

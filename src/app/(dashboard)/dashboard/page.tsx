@@ -11,6 +11,7 @@ import { TopProjects } from "@/components/dashboard/TopProjects";
 import { ClientGrowthBars } from "@/components/dashboard/ClientGrowthBars";
 import { RecentInvoices } from "@/components/dashboard/RecentInvoices";
 import { InsightsCard } from "@/components/dashboard/InsightsCard";
+import { UpcomingDeliverables } from "@/components/dashboard/UpcomingDeliverables";
 import { FirstRun } from "@/components/dashboard/FirstRun";
 import { NewProjectButton } from "@/components/projects/NewProjectButton";
 import { NewInvoiceButton } from "@/components/invoices/NewInvoiceButton";
@@ -123,6 +124,18 @@ export default async function DashboardPage() {
         <Card className="lg:col-span-3">
           <CardHeader title="Insights" subtitle="Needs attention" menu={false} />
           <InsightsCard items={view.insights} />
+        </Card>
+      </div>
+
+      {/* Row 4 */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <Card className="flex flex-col lg:col-span-6">
+          <CardHeader
+            title="Upcoming deliverables"
+            subtitle="Milestones due across all projects"
+            menu={false}
+          />
+          <UpcomingDeliverables data={view.deliverables} />
         </Card>
       </div>
     </div>
