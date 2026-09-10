@@ -195,6 +195,7 @@ model Invoice {
   @@index([projectId])
   @@index([status])
   @@index([dueDate])
+  @@index([issueDate])
   @@map("invoices")
 }
 
@@ -228,6 +229,7 @@ model Payment {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([invoiceId])
+  @@index([paymentDate])
   @@map("payments")
 }
 

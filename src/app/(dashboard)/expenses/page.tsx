@@ -4,6 +4,8 @@ import { formatCurrency } from "@/lib/format";
 import { ExpensesFilters } from "@/components/expenses/ExpensesFilters";
 import { ExpensesTable } from "@/components/expenses/ExpensesTable";
 import { AddExpenseButton } from "@/components/expenses/AddExpenseButton";
+import { Card, CardHeader } from "@/components/dashboard/Card";
+import { BarList } from "@/components/analytics/BarList";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +29,7 @@ export default async function ExpensesPage({
   }
 
   const sp = await searchParams;
-  const { items, total, projects } = await listExpenses(ctx.agencyId, {
+  const { items, total, byCategory, projects } = await listExpenses(ctx.agencyId, {
     projectId: sp.projectId,
     category: sp.category as ExpenseCategory | undefined,
   });
@@ -48,6 +50,21 @@ export default async function ExpensesPage({
       </div>
 
       <ExpensesFilters projects={projects} />
+
+      {byCategory.length > 1 && (
+        <Card>
+          <CardHeader title="By category" menu={false} />
+          <BarList
+            items={byCategory.map((c) => ({
+              label: c.label,
+              amount: c.amount,
+              pct: c.pct,
+              sub: `${c.count}×`,
+            }))}
+          />
+        </Card>
+      )}
+
       <ExpensesTable items={items} projects={projects} />
     </div>
   );

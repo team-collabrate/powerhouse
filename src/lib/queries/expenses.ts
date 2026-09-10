@@ -35,9 +35,19 @@ export interface ExpenseRow {
   receiptUrl: string | null;
 }
 
+export interface ExpenseCategorySlice {
+  category: ExpenseCategory;
+  label: string;
+  amount: number;
+  count: number;
+  pct: number;
+}
+
 export interface ExpenseListResult {
   items: ExpenseRow[];
   total: number;
+  /** the filtered rows rolled up by category, biggest first */
+  byCategory: ExpenseCategorySlice[];
   projects: { id: string; name: string }[];
 }
 
@@ -90,9 +100,24 @@ export async function listExpenses(
     receiptUrl: e.receiptUrl,
   }));
 
-  return {
-    items,
-    total: items.reduce((s, e) => s + e.amount, 0),
-    projects,
-  };
+  const total = items.reduce((s, e) => s + e.amount, 0);
+
+  const catMap = new Map<ExpenseCategory, { amount: number; count: number }>();
+  for (const e of items) {
+    const v = catMap.get(e.category) ?? { amount: 0, count: 0 };
+    v.amount += e.amount;
+    v.count += 1;
+    catMap.set(e.category, v);
+  }
+  const byCategory: ExpenseCategorySlice[] = [...catMap.entries()]
+    .map(([category, v]) => ({
+      category,
+      label: EXPENSE_CATEGORY_LABELS[category] ?? category,
+      amount: Math.round(v.amount),
+      count: v.count,
+      pct: total > 0 ? Math.round((v.amount / total) * 1000) / 10 : 0,
+    }))
+    .sort((a, b) => b.amount - a.amount);
+
+  return { items, total, byCategory, projects };
 }
