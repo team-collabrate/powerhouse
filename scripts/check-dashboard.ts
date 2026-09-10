@@ -4,6 +4,7 @@
 import {
   buildDashboardView,
   type DashInputs,
+  type DashProjectInput,
 } from "@/lib/queries/dashboard";
 import { can } from "@/lib/permissions";
 import { profitabilityCsv } from "@/lib/queries/analytics";
@@ -168,6 +169,178 @@ check(
 check("client growth: 6 bars", v.clientGrowth.bars.length === 6);
 check("client growth netNew = 4", v.clientGrowth.netNew === 4, v.clientGrowth.netNew);
 check("last bar highlighted", v.clientGrowth.bars[5].highlight === true);
+
+/* ------------------------------------------------------------------ *
+ * buildDashboardView — yearly / all-time framing.
+ * Small, focused fixtures (the shared `input` above is a broad case).
+ * ------------------------------------------------------------------ */
+console.log("\ndashboard (yearly framing):");
+
+const dNow = new Date("2026-09-15T12:00:00Z");
+
+const mkProject = (o: Partial<DashProjectInput> = {}): DashProjectInput => ({
+  id: "p",
+  name: "Project",
+  status: "delivered",
+  serviceType: "web_dev",
+  contractValue: 0,
+  teamCost: 0,
+  allocatedOverhead: 0,
+  createdAt: new Date(2026, 0, 15),
+  startDate: null,
+  deadline: null,
+  clientName: "Client",
+  expenses: [],
+  ...o,
+});
+
+const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
+  greetingName: "Test",
+  now: dNow,
+  monthlyRevenueTarget: 0,
+  overheadMethod: "manual",
+  overheadRate: 0,
+  overheadMonthlyPool: 0,
+  projects: [],
+  invoices: [],
+  payments: [],
+  clients: [],
+  ...o,
+});
+
+// Slice 1 — Revenue KPI value is all-time; the hint counts only this year.
+{
+  const r = buildDashboardView(
+    mkInputs({
+      payments: [
+        { amount: 5_000, date: new Date(2026, 2, 1) },
+        { amount: 7_000, date: new Date(2025, 10, 1) }, // last year
+      ],
+    }),
+  );
+  check(
+    "revenue KPI value is all-time (₹12,000)",
+    r.kpis[0].value === "₹12,000",
+    r.kpis[0].value,
+  );
+  check(
+    "revenue hint counts only 2026 (₹5,000)",
+    r.kpis[0].hint === "₹5,000 received in 2026",
+    r.kpis[0].hint,
+  );
+  check(
+    "no progress bar without a revenue target",
+    r.kpis[0].progress === undefined,
+    r.kpis[0].progress,
+  );
+}
+
+// Slice 2 — Profit Margin is portfolio-weighted and skips closed projects.
+{
+  const r = buildDashboardView(
+    mkInputs({
+      projects: [
+        mkProject({ id: "open", status: "active", contractValue: 100_000, teamCost: 40_000 }),
+        mkProject({ id: "shut", status: "closed", contractValue: 100_000, teamCost: 90_000 }),
+      ],
+    }),
+  );
+  // open alone: 60k / 100k = 60%. With the closed one it would be 35%.
+  check(
+    "profit margin = 60.0% (closed project excluded)",
+    r.kpis[2].value === "60.0%",
+    r.kpis[2].value,
+  );
+}
+
+// Slice 3 — Projects KPI hint reflects whether anything is still in progress.
+{
+  const done = buildDashboardView(
+    mkInputs({
+      projects: [
+        mkProject({ id: "a", status: "delivered" }),
+        mkProject({ id: "b", status: "delivered" }),
+      ],
+    }),
+  );
+  check("projects count = 2", done.kpis[1].value === "2", done.kpis[1].value);
+  check(
+    'projects hint "all delivered" when none active',
+    done.kpis[1].hint === "all delivered",
+    done.kpis[1].hint,
+  );
+
+  const live = buildDashboardView(
+    mkInputs({
+      projects: [
+        mkProject({ id: "a", status: "active" }),
+        mkProject({ id: "b", status: "delivered" }),
+      ],
+    }),
+  );
+  check(
+    'projects hint "1 in progress" with one active',
+    live.kpis[1].hint === "1 in progress",
+    live.kpis[1].hint,
+  );
+}
+
+// Slice 4 — with a target, the hint shows % of the annualised (×12) target.
+{
+  const r = buildDashboardView(
+    mkInputs({
+      monthlyRevenueTarget: 10_000, // annual target ₹1,20,000
+      payments: [{ amount: 30_000, date: new Date(2026, 3, 1) }],
+    }),
+  );
+  check(
+    "revenue hint shows % of annual target (30k / 120k = 25%)",
+    r.kpis[0].hint === "₹30,000 in 2026 · 25% of target",
+    r.kpis[0].hint,
+  );
+  check(
+    "revenue progress bar = 25",
+    Math.round(r.kpis[0].progress ?? -1) === 25,
+    r.kpis[0].progress,
+  );
+}
+
+// Slice 5 — profit chart = 12 monthly buckets; project cost is amortised over
+// its span, and the current (partial) month is capped at today.
+{
+  const r = buildDashboardView(
+    mkInputs({
+      // ₹9,000 over a 90-day span from 1 Aug = ₹100/day
+      projects: [
+        mkProject({
+          id: "p",
+          status: "active",
+          contractValue: 50_000,
+          teamCost: 9_000,
+          startDate: new Date(2026, 7, 1),
+        }),
+      ],
+      payments: [{ amount: 6_000, date: new Date(2026, 7, 20) }], // August
+    }),
+  );
+  const pts = r.profit.points;
+  const aug = pts[10];
+  const sep = pts[11]; // current month
+  check("profit chart has 12 monthly points", pts.length === 12, pts.length);
+  check("August cost = ₹3,100 (31 days × ₹100)", aug.cost === 3_100, aug.cost);
+  check("August revenue = ₹6,000 (the one payment)", aug.revenue === 6_000, aug.revenue);
+  check("August profit = ₹2,900", aug.profit === 2_900, aug.profit);
+  check(
+    "current month cost capped at today (½-month, under a full ₹3,000)",
+    sep.cost > 1_000 && sep.cost < 2_000,
+    sep.cost,
+  );
+  check(
+    "current month profit = −cost (no payment landed)",
+    Math.abs(sep.profit + sep.cost) <= 1,
+    { profit: sep.profit, cost: sep.cost },
+  );
+}
 
 console.log("\npermissions:");
 check("admin can manage settings", can("admin", "settings:manage"));
