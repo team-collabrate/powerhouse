@@ -146,7 +146,21 @@ writes an `activity_log` row via `src/lib/activity.ts`.
 
 Create/edit UI is one client component — `ProjectDialog` (render-prop
 trigger) — wrapped by `NewProjectButton` / `EditProjectButton`. `ClientSelect`
-has inline "new client" creation.
+and `ServiceSelect` both have inline create.
+
+**Services** are per-agency rows (`Service` model: `slug`, `name`, `color`,
+`position`, `isActive`), not an enum. `Project.serviceType` keeps holding the
+slug (the 5 built-in slugs match the old enum, so no project rows moved;
+migration `20260910140000_services` backfills them for every agency, and
+`ensureDefaultServices` seeds new ones on signup/seed). `src/lib/services.ts`
+(pure, client-safe) has the 7-colour palette, the defaults, and
+`serviceLabel()` / `serviceColor()` resolvers (fall back to the built-ins,
+then the raw slug). `getServices` (cached) for pages/`GET /api/services`;
+`fetchServices` (uncached) inside other query builders. Manage in Settings →
+Services (`ServicesCard`): add, recolour, hide/show — no hard delete.
+`POST /api/services` + `PATCH /api/services/[id]` are gated `project:write`.
+`PROJECT_STATUSES` moved to `src/lib/projects-shared.ts` (client-safe) so the
+dialog doesn't pull the cache layer.
 
 Milestones (`MilestonesCard` + `MilestoneDialog` on the detail page):
 `POST /api/projects/[id]/milestones`, `PATCH|DELETE /api/milestones/[id]`

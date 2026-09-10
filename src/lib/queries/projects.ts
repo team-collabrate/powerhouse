@@ -1,41 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { calculateProjectProfit } from "@/lib/profit";
 import { resolveAgencyOverhead } from "@/lib/queries/overhead";
+import { fetchServices } from "@/lib/queries/services";
+import { serviceLabel, serviceColor } from "@/lib/services";
 import type { MilestoneRow, MilestoneStatus } from "@/lib/queries/milestones";
 
 const num = (d: unknown): number => (d == null ? 0 : Number(d));
 
-export const PROJECT_STATUSES = [
-  "active",
-  "in_review",
-  "delivered",
-  "closed",
-] as const;
-export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
-
-export const SERVICE_TYPES = [
-  "web_dev",
-  "design",
-  "marketing",
-  "consulting",
-  "other",
-] as const;
-export type ServiceType = (typeof SERVICE_TYPES)[number];
-
-export const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
-  web_dev: "Web Development",
-  design: "Brand & Design",
-  marketing: "Marketing",
-  consulting: "Consulting",
-  other: "Other",
-};
+export {
+  PROJECT_STATUSES,
+  PROJECT_STATUS_LABELS,
+  type ProjectStatus,
+} from "@/lib/projects-shared";
+import type { ProjectStatus } from "@/lib/projects-shared";
 
 export interface ProjectListItem {
   id: string;
   name: string;
   clientName: string;
   status: ProjectStatus;
-  serviceType: ServiceType;
+  serviceType: string;
+  serviceLabel: string;
+  serviceColor: string;
   contractValue: number;
   totalCost: number;
   profit: number;
@@ -58,7 +44,7 @@ export async function listProjects(
   agencyId: string,
   filters: ProjectFilters = {},
 ): Promise<ProjectListResult> {
-  const [rows, overhead] = await Promise.all([
+  const [rows, overhead, services] = await Promise.all([
     prisma.project.findMany({
       where: { agencyId },
       orderBy: { createdAt: "desc" },
@@ -77,6 +63,7 @@ export async function listProjects(
       },
     }),
     resolveAgencyOverhead(agencyId),
+    fetchServices(agencyId),
   ]);
 
   const all: ProjectListItem[] = rows.map((p) => {
@@ -91,7 +78,9 @@ export async function listProjects(
       name: p.name,
       clientName: p.client.name,
       status: p.status as ProjectStatus,
-      serviceType: p.serviceType as ServiceType,
+      serviceType: p.serviceType,
+      serviceLabel: serviceLabel(services, p.serviceType),
+      serviceColor: serviceColor(services, p.serviceType),
       contractValue: num(p.contractValue),
       totalCost: profit.totalCost,
       profit: profit.profit,
@@ -127,7 +116,8 @@ export interface ProjectDetail {
   clientId: string;
   clientName: string;
   status: ProjectStatus;
-  serviceType: ServiceType;
+  serviceType: string;
+  serviceLabel: string;
   contractValue: number;
   teamCost: number;
   allocatedOverhead: number;
@@ -167,7 +157,7 @@ export async function getProject(
   agencyId: string,
   id: string,
 ): Promise<ProjectDetail | null> {
-  const [p, overhead] = await Promise.all([
+  const [p, overhead, services] = await Promise.all([
     prisma.project.findFirst({
     where: { id, agencyId },
     select: {
@@ -221,6 +211,7 @@ export async function getProject(
     },
     }),
     resolveAgencyOverhead(agencyId),
+    fetchServices(agencyId),
   ]);
   if (!p) return null;
 
@@ -255,7 +246,8 @@ export async function getProject(
     clientId: p.clientId,
     clientName: p.client.name,
     status: p.status as ProjectStatus,
-    serviceType: p.serviceType as ServiceType,
+    serviceType: p.serviceType,
+    serviceLabel: serviceLabel(services, p.serviceType),
     contractValue: num(p.contractValue),
     teamCost: num(p.teamCost),
     allocatedOverhead: num(p.allocatedOverhead),

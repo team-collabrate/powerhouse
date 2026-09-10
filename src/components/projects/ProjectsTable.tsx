@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/format";
-import {
-  SERVICE_TYPE_LABELS,
-  type ProjectListItem,
-} from "@/lib/queries/projects";
+import type { ProjectListItem } from "@/lib/queries/projects";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
 
 export function ProjectsTable({ items }: { items: ProjectListItem[] }) {
@@ -45,8 +42,12 @@ export function ProjectsTable({ items }: { items: ProjectListItem[] }) {
                 >
                   {p.name}
                 </Link>
-                <span className="text-[11.5px] text-ink-3">
-                  {SERVICE_TYPE_LABELS[p.serviceType]}
+                <span className="inline-flex items-center gap-1.5 text-[11.5px] text-ink-3">
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ background: p.serviceColor }}
+                  />
+                  {p.serviceLabel}
                 </span>
               </td>
               <td className="px-4 py-3 text-[13px] text-ink-2">{p.clientName}</td>

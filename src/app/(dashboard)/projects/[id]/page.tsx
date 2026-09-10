@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "react-feather";
 import { getSessionContext } from "@/lib/session";
-import { getProject, SERVICE_TYPE_LABELS } from "@/lib/queries/projects";
+import { getProject } from "@/lib/queries/projects";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Card, CardHeader } from "@/components/dashboard/Card";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
@@ -54,7 +54,7 @@ export default async function ProjectDetailPage({
             >
               {p.clientName}
             </Link>{" "}
-            · {SERVICE_TYPE_LABELS[p.serviceType]}
+            · {p.serviceLabel}
             {p.deadline && ` · Due ${formatDate(p.deadline)}`}
           </p>
         </div>

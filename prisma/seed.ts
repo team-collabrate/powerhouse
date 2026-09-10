@@ -67,6 +67,9 @@ async function resolveAgency() {
 async function main() {
   const { agencyId, primaryUserId } = await resolveAgency();
 
+  const { ensureDefaultServices } = await import("../src/lib/queries/services");
+  await ensureDefaultServices(prisma, agencyId);
+
   await prisma.payment.deleteMany({ where: { invoice: { agencyId } } });
   await prisma.invoice.deleteMany({ where: { agencyId } });
   await prisma.projectExpense.deleteMany({ where: { project: { agencyId } } });

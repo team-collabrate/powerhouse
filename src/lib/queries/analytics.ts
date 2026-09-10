@@ -3,11 +3,12 @@
  * lives in `src/lib/queries/report.ts` (`getReport`).
  */
 import { calculateProjectProfit } from "@/lib/profit";
+import type { ProjectStatus } from "@/lib/queries/projects";
 import {
-  SERVICE_TYPE_LABELS,
-  type ProjectStatus,
-  type ServiceType,
-} from "@/lib/queries/projects";
+  serviceLabel,
+  serviceColor,
+  type ServiceLite,
+} from "@/lib/services";
 
 export interface MonthlyPoint {
   label: string;
@@ -21,7 +22,9 @@ export interface ProfitabilityRow {
   name: string;
   client: string;
   status: ProjectStatus;
-  serviceType: ServiceType;
+  serviceType: string;
+  serviceLabel: string;
+  serviceColor: string;
   contractValue: number;
   teamCost: number;
   expenses: number;
@@ -49,6 +52,7 @@ export interface ProfitabilityInput {
 export function buildProfitability(
   projects: ProfitabilityInput[],
   overheadFor: (projectId: string) => number,
+  services: ServiceLite[] = [],
 ): ProfitabilityRow[] {
   return projects
     .map((p) => {
@@ -64,7 +68,9 @@ export function buildProfitability(
         name: p.name,
         client: p.clientName,
         status: p.status as ProjectStatus,
-        serviceType: p.serviceType as ServiceType,
+        serviceType: p.serviceType,
+        serviceLabel: serviceLabel(services, p.serviceType),
+        serviceColor: serviceColor(services, p.serviceType),
         contractValue: p.contractValue,
         teamCost: p.teamCost,
         expenses: pr.totalExpenses,
@@ -82,10 +88,12 @@ export interface ServiceMixSlice {
   label: string;
   value: number; // % of contract value
   amount: number;
+  color: string;
 }
 
 export function serviceMixByContract(
-  rows: { serviceType: ServiceType; contractValue: number }[],
+  rows: { serviceType: string; contractValue: number }[],
+  services: ServiceLite[] = [],
 ): ServiceMixSlice[] {
   const byService = new Map<string, number>();
   for (const r of rows) {
@@ -99,7 +107,8 @@ export function serviceMixByContract(
   return [...byService.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([type, amount]) => ({
-      label: SERVICE_TYPE_LABELS[type as ServiceType] ?? type,
+      label: serviceLabel(services, type),
+      color: serviceColor(services, type),
       amount,
       value: Math.round((amount / total) * 100),
     }));
@@ -125,7 +134,7 @@ export function profitabilityCsv(rows: ProfitabilityRow[]): string {
       r.name,
       r.client,
       r.status,
-      SERVICE_TYPE_LABELS[r.serviceType] ?? r.serviceType,
+      r.serviceLabel,
       r.contractValue,
       r.teamCost,
       r.expenses,

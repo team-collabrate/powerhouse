@@ -35,11 +35,30 @@ model Agency {
   companyExpenses CompanyExpense[]
   activityLogs    ActivityLog[]
   invites         Invite[]
+  services        Service[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("agencies")
+}
+
+model Service {
+  id        String  @id @default(cuid())
+  agencyId  String  @map("agency_id")
+  agency    Agency  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  slug      String // stable key stored on Project.serviceType
+  name      String
+  color     String  @default("#9333ea")
+  position  Int     @default(0)
+  isActive  Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([agencyId, slug])
+  @@index([agencyId])
+  @@map("services")
 }
 
 model User {

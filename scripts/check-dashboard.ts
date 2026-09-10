@@ -122,6 +122,11 @@ const input: DashInputs = {
     { createdAt: d(-2) }, // this month
     { createdAt: d(-1) },
   ],
+  services: [
+    { slug: "web_dev", name: "Web Development", color: "#9333ea" },
+    { slug: "design", name: "Brand & Design", color: "#db2777" },
+    { slug: "consulting", name: "Consulting", color: "#16a34a" },
+  ],
   milestones: [
     {
       id: "m-late",
@@ -275,6 +280,7 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
   payments: [],
   clients: [],
   milestones: [],
+  services: [],
   ...o,
 });
 
@@ -899,6 +905,8 @@ const csv = profitabilityCsv([
     client: "Acme",
     status: "active",
     serviceType: "design",
+    serviceLabel: "Brand & Design",
+    serviceColor: "#db2777",
     contractValue: 50000,
     teamCost: 20000,
     expenses: 3000,

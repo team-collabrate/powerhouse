@@ -54,6 +54,7 @@ import {
   type ClientRanking,
 } from "@/lib/reports/client-ranking";
 import { getMilestoneRollup, type MilestoneRollup } from "@/lib/queries/milestone-rollup";
+import { fetchServices } from "@/lib/queries/services";
 
 const num = (d: unknown): number => (d == null ? 0 : Number(d));
 
@@ -119,6 +120,7 @@ export async function fetchReport(
     projects,
     clients,
     milestones,
+    services,
     overhead,
   ] = await Promise.all([
       prisma.invoice.findMany({
@@ -172,6 +174,7 @@ export async function fetchReport(
         },
       }),
       getMilestoneRollup(agencyId, { from, to }),
+      fetchServices(agencyId),
       resolveAgencyOverhead(agencyId),
     ]);
 
@@ -242,8 +245,9 @@ export async function fetchReport(
       expenses: pr.projectExpenses.map((e) => num(e.amount)),
     })),
     (id) => overhead.overheadFor(id),
+    services,
   );
-  const serviceMix = serviceMixByContract(profitability);
+  const serviceMix = serviceMixByContract(profitability, services);
 
   // ---- invoice-derived reports ----
   const invForReports = invoices.map((i) => {

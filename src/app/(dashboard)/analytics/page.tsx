@@ -24,6 +24,7 @@ const SECTIONS = [
   ["gst", "GST"],
   ["aging", "Aging"],
   ["dso", "Collection speed"],
+  ["services", "Services"],
   ["expenses", "Expenses"],
   ["clients", "Clients"],
   ["deliverables", "Deliverables"],
@@ -170,6 +171,41 @@ export default async function AnalyticsPage({
 
       <Section id="dso" title="Collection speed" subtitle={`Invoices paid in ${period.label}`}>
         <DsoCard data={r.dso} />
+      </Section>
+
+      <Section id="services" title="Contract value by service" subtitle="All projects">
+        {r.serviceMix.length === 0 ? (
+          <p className="px-5 pb-5 pt-4 text-[13px] text-ink-3">No projects yet.</p>
+        ) : (
+          <ul className="space-y-2.5 px-5 pb-5 pt-4">
+            {r.serviceMix.map((s) => (
+              <li key={s.label}>
+                <div className="flex items-baseline justify-between text-[13px]">
+                  <span className="inline-flex items-center gap-1.5 text-ink-2">
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ background: s.color }}
+                    />
+                    {s.label}
+                  </span>
+                  <span className="tnum text-ink">
+                    {formatCurrency(s.amount)}{" "}
+                    <span className="text-ink-3">{s.value}%</span>
+                  </span>
+                </div>
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.max(1, s.value)}%`,
+                      background: s.color,
+                    }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </Section>
 
       <Section id="expenses" title="Expenses by category" subtitle={period.label}>

@@ -112,18 +112,3 @@ export interface DashboardView {
   isEmpty: boolean;
 }
 
-export const SERVICE_LABELS: Record<string, string> = {
-  web_dev: "Web Development",
-  design: "Brand & Design",
-  marketing: "Marketing",
-  consulting: "Consulting",
-  other: "Other",
-};
-
-export const SERVICE_COLORS = [
-  "var(--accent)",
-  "#c9a3ff",
-  "#e4d3ff",
-  "#efeaf5",
-  "#f4f1f8",
-];

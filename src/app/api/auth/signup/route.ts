@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultServices } from "@/lib/queries/services";
 
 const schema = z.object({
   agencyName: z.string().min(1).max(255),
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
           agencyId: agency.id,
         },
       });
+      await ensureDefaultServices(tx, agency.id);
     });
   } catch (err) {
     console.error("signup: failed to provision agency/user", err);

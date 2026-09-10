@@ -1,8 +1,5 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/format";
-import {
-  SERVICE_TYPE_LABELS,
-} from "@/lib/queries/projects";
 import type { ProfitabilityRow } from "@/lib/queries/analytics";
 import { ProjectStatusBadge } from "@/components/projects/ProjectStatusBadge";
 
@@ -53,7 +50,7 @@ export function ProfitabilityTable({ rows }: { rows: ProfitabilityRow[] }) {
                   {r.name}
                 </Link>
                 <span className="block text-[11px] text-ink-3">
-                  {r.client} · {SERVICE_TYPE_LABELS[r.serviceType]}
+                  {r.client} · {r.serviceLabel}
                 </span>
               </td>
               <td className="px-3 py-2.5">

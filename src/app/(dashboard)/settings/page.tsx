@@ -10,7 +10,9 @@ import { Card, CardHeader } from "@/components/dashboard/Card";
 import { AgencySettingsForm } from "@/components/settings/AgencySettingsForm";
 import { CompanyExpensesCard } from "@/components/settings/CompanyExpensesCard";
 import { OverheadAllocationCard } from "@/components/settings/OverheadAllocationCard";
+import { ServicesCard } from "@/components/settings/ServicesCard";
 import { TeamCard } from "@/components/settings/TeamCard";
+import { getServices } from "@/lib/queries/services";
 
 export const dynamic = "force-dynamic";
 
@@ -38,11 +40,12 @@ export default async function SettingsPage() {
     );
   }
 
-  const [settings, overhead, team, invites] = await Promise.all([
+  const [settings, overhead, team, invites, services] = await Promise.all([
     getAgencySettings(ctx.agencyId),
     listCompanyExpenses(ctx.agencyId),
     listTeamMembers(ctx.agencyId, ctx.userId),
     listInvites(ctx.agencyId),
+    getServices(ctx.agencyId),
   ]);
 
   return (
@@ -60,6 +63,8 @@ export default async function SettingsPage() {
           <AgencySettingsForm settings={settings} />
         </Card>
       )}
+
+      <ServicesCard services={services} />
 
       <CompanyExpensesCard data={overhead} />
 

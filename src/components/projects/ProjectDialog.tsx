@@ -7,19 +7,11 @@ import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { ClientSelect } from "./ClientSelect";
-import {
-  PROJECT_STATUSES,
-  SERVICE_TYPES,
-  SERVICE_TYPE_LABELS,
-  type ProjectDetail,
-} from "@/lib/queries/projects";
+import { ServiceSelect } from "./ServiceSelect";
+import { PROJECT_STATUSES, PROJECT_STATUS_LABELS } from "@/lib/projects-shared";
+import type { ProjectDetail } from "@/lib/queries/projects";
 
-const STATUS_LABELS: Record<string, string> = {
-  active: "Active",
-  in_review: "In Review",
-  delivered: "Delivered",
-  closed: "Closed",
-};
+const STATUS_LABELS = PROJECT_STATUS_LABELS;
 
 type FormState = {
   name: string;
@@ -168,18 +160,12 @@ export function ProjectDialog({
                 error={errors.clientId}
               />
 
-              <div className="grid grid-cols-2 gap-3">
-                <Select
-                  label="Service"
+              <div className="grid grid-cols-2 items-start gap-3">
+                <ServiceSelect
                   value={form.serviceType}
-                  onChange={(e) => set("serviceType", e.target.value)}
-                >
-                  {SERVICE_TYPES.map((s) => (
-                    <option key={s} value={s}>
-                      {SERVICE_TYPE_LABELS[s]}
-                    </option>
-                  ))}
-                </Select>
+                  onChange={(slug) => set("serviceType", slug)}
+                  error={errors.serviceType}
+                />
                 <Select
                   label="Status"
                   value={form.status}

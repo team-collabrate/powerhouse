@@ -2,17 +2,21 @@ import { prisma } from "@/lib/prisma";
 import { calculateProjectProfit } from "@/lib/profit";
 import { allocateOverhead, type OverheadMethod } from "@/lib/overhead";
 import { resolveAgencyOverhead } from "@/lib/queries/overhead";
+import { fetchServices } from "@/lib/queries/services";
 import { cacheAgencyRead } from "@/lib/cache";
 import { formatCurrency } from "@/lib/format";
 import { displayInvoiceStatus, isOutstanding } from "@/lib/invoice-status";
 import {
-  SERVICE_COLORS,
-  SERVICE_LABELS,
   type ClientGrowthBar,
   type DashboardView,
   type InvoiceRowView,
   type ProfitPoint,
 } from "@/lib/dashboard-types";
+import {
+  serviceLabel,
+  serviceColor,
+  type ServiceLite,
+} from "@/lib/services";
 import {
   buildMilestoneRollup,
   type MilestoneRollupInput,
@@ -55,6 +59,7 @@ export interface DashInputs {
   payments: { amount: number; date: Date }[]; // all-time
   clients: { createdAt: Date }[]; // last 6 months
   milestones: MilestoneRollupInput[];
+  services: ServiceLite[];
   monthlyRevenueTarget: number;
   overheadMethod: string;
   overheadRate: number; // fraction 0..1
@@ -287,11 +292,11 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     serviceTotal > 0
       ? [...byService.entries()]
           .sort((a, b) => b[1] - a[1])
-          .slice(0, SERVICE_COLORS.length)
-          .map(([type, value], i) => ({
-            label: SERVICE_LABELS[type] ?? type,
+          .slice(0, 6)
+          .map(([type, value]) => ({
+            label: serviceLabel(input.services, type),
             value: Math.round((value / serviceTotal) * 100),
-            color: SERVICE_COLORS[i],
+            color: serviceColor(input.services, type),
           }))
       : [];
 
@@ -442,8 +447,16 @@ export async function fetchDashboardData(
   // the dashboard is all-time / trailing-12-months, so pull every payment
   const sixMonthsStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-  const [projects, invoices, payments, clients, milestones, agency, overhead] =
-    await Promise.all([
+  const [
+    projects,
+    invoices,
+    payments,
+    clients,
+    milestones,
+    agency,
+    services,
+    overhead,
+  ] = await Promise.all([
     prisma.project.findMany({
       where: { agencyId },
       select: {
@@ -498,6 +511,7 @@ export async function fetchDashboardData(
       where: { id: agencyId },
       select: { monthlyRevenueTarget: true },
     }),
+    fetchServices(agencyId),
     resolveAgencyOverhead(agencyId),
   ]);
 
@@ -536,6 +550,7 @@ export async function fetchDashboardData(
       date: p.paymentDate,
     })),
     clients,
+    services,
     milestones: milestones.map((m) => ({
       id: m.id,
       name: m.name,

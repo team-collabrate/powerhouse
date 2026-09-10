@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PROJECT_STATUSES, SERVICE_TYPES } from "@/lib/queries/projects";
+import { PROJECT_STATUSES } from "@/lib/queries/projects";
 
 const dateString = z
   .string()
@@ -14,7 +14,7 @@ const base = z.object({
   clientId: z.string().trim().min(1, "Select a client"),
   description: z.string().trim().max(2000).optional().or(z.literal("")),
   status: z.enum(PROJECT_STATUSES).default("active"),
-  serviceType: z.enum(SERVICE_TYPES).default("other"),
+  serviceType: z.string().trim().min(1).max(60).default("other"),
   contractValue: z.coerce.number().positive("Must be greater than 0"),
   teamCost: z.coerce.number().min(0).default(0),
   allocatedOverhead: z.coerce.number().min(0).default(0),
