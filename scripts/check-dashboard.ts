@@ -21,6 +21,20 @@ import {
   fyQuarterOf,
   eachBucket,
 } from "@/lib/period";
+import { buildPeriodSummary } from "@/lib/reports/period-summary";
+import { buildPaymentMethodMix } from "@/lib/reports/payment-methods";
+import {
+  buildGstByQuarter,
+  buildGstSummary,
+  taxPortion,
+} from "@/lib/reports/gst";
+import { buildAgingBuckets } from "@/lib/reports/aging";
+import { buildDso } from "@/lib/reports/dso";
+import {
+  buildExpenseByCategory,
+  buildCompanyExpenseTrend,
+} from "@/lib/reports/expense-categories";
+import { buildClientRanking } from "@/lib/reports/client-ranking";
 
 const now = new Date("2026-09-15T12:00:00Z");
 const d = (offset: number) => {
@@ -479,6 +493,232 @@ check(
       months[2].label === "Mar" &&
       months[2].end.getMonth() === 3,
     months.map((b) => b.label),
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * src/lib/reports/* — pure report builders
+ * ------------------------------------------------------------------ */
+console.log("\nreports:");
+
+// --- period summary ---
+{
+  const s = buildPeriodSummary(
+    { revenue: 100_000, cost: 60_000 },
+    { revenue: 80_000, cost: 50_000 },
+  );
+  check(
+    "period summary: revenue +25%, net +33.3%, margin 40% (+2.5 pts)",
+    s.revenue.deltaPct === 25 &&
+      s.revenue.direction === "up" &&
+      s.net.deltaPct === 33.3 &&
+      s.marginPct === 40 &&
+      s.prevMarginPct === 37.5 &&
+      s.marginDeltaPts === 2.5,
+    s,
+  );
+  const young = buildPeriodSummary(
+    { revenue: 5_000, cost: 2_000 },
+    { revenue: 0, cost: 0 },
+  );
+  check(
+    "period summary: prior window empty → deltaPct null, flat",
+    young.revenue.deltaPct === null &&
+      young.revenue.direction === "flat" &&
+      young.marginDeltaPts === null,
+    young,
+  );
+}
+
+// --- payment method mix ---
+{
+  const mix = buildPaymentMethodMix(
+    [
+      { method: "cash", amount: 5_000, date: new Date(2026, 5, 10) },
+      { method: "bank_transfer", amount: 15_000, date: new Date(2026, 5, 20) },
+      { method: "cash", amount: 3_000, date: new Date(2026, 5, 25) },
+      { method: "upi", amount: 2_000, date: new Date(2026, 4, 1) }, // out of range
+    ],
+    new Date(2026, 5, 1),
+    new Date(2026, 6, 1),
+  );
+  check(
+    "payment mix: bank 15k (65.2%) then cash 8k×2 (34.8%), UPI excluded",
+    mix.length === 2 &&
+      mix[0].method === "bank_transfer" &&
+      mix[0].amount === 15_000 &&
+      mix[0].pct === 65.2 &&
+      mix[1].method === "cash" &&
+      mix[1].count === 2 &&
+      mix[1].amount === 8_000 &&
+      mix[1].pct === 34.8,
+    mix,
+  );
+}
+
+// --- GST ---
+check(
+  "taxPortion(11800, 18) === 1800 (tax-inclusive)",
+  Math.round(taxPortion(11_800, 18)) === 1_800,
+  taxPortion(11_800, 18),
+);
+check(
+  "taxPortion matches invoiceTotals",
+  Math.abs(
+    taxPortion(invoiceTotals([{ quantity: 1, unitPrice: 10_000 }], 18).total, 18) -
+      invoiceTotals([{ quantity: 1, unitPrice: 10_000 }], 18).tax,
+  ) <= 1,
+);
+{
+  const gstInvoices = [
+    { issueDate: new Date(2026, 4, 15), amount: 11_800, taxRatePct: 18, status: "paid" }, // Q1 FY26-27
+    { issueDate: new Date(2026, 7, 1), amount: 5_900, taxRatePct: 18, status: "sent" }, // Q2
+    { issueDate: new Date(2026, 5, 1), amount: 1_000, taxRatePct: 0, status: "draft" }, // excluded
+    { issueDate: null, amount: 9_999, taxRatePct: 18, status: "sent" }, // excluded
+  ];
+  const q = buildGstByQuarter(gstInvoices);
+  check(
+    "GST by quarter: Q1 tax 1800 / taxable 10000, Q2 tax 900, draft+undated excluded",
+    q.length === 2 &&
+      q[0].label === "Q1 FY 2026-27" &&
+      q[0].tax === 1_800 &&
+      q[0].taxable === 10_000 &&
+      q[1].quarter === "Q2" &&
+      q[1].tax === 900,
+    q,
+  );
+  const sumApr = buildGstSummary(
+    gstInvoices,
+    new Date(2026, 3, 1),
+    new Date(2026, 6, 1),
+  );
+  check(
+    "GST summary Apr–Jun: tax 1800, 1 invoice",
+    sumApr.tax === 1_800 && sumApr.taxable === 10_000 && sumApr.invoiceCount === 1,
+    sumApr,
+  );
+}
+
+// --- aging ---
+{
+  const agingNow = new Date(2026, 8, 15);
+  const aging = buildAgingBuckets(
+    [
+      { balance: 10_000, dueDate: new Date(2026, 8, 20), displayStatus: "sent", clientName: "A" },
+      { balance: 5_000, dueDate: new Date(2026, 8, 1), displayStatus: "overdue", clientName: "B" },
+      { balance: 8_000, dueDate: new Date(2026, 6, 1), displayStatus: "partial", clientName: "B" },
+      { balance: 3_000, dueDate: new Date(2026, 0, 1), displayStatus: "overdue", clientName: "C" },
+      { balance: 0, dueDate: new Date(2026, 0, 1), displayStatus: "overdue", clientName: "D" }, // 0 balance
+      { balance: 9_999, dueDate: new Date(2026, 0, 1), displayStatus: "paid", clientName: "E" }, // not outstanding
+    ],
+    agingNow,
+  );
+  const b = Object.fromEntries(aging.buckets.map((x) => [x.bucket, x.amount]));
+  check(
+    "aging: current 10k, 1-30 5k, 61-90 8k, 90+ 3k, total 26k",
+    b.current === 10_000 &&
+      b["1-30"] === 5_000 &&
+      b["31-60"] === 0 &&
+      b["61-90"] === 8_000 &&
+      b["90+"] === 3_000 &&
+      aging.total === 26_000,
+    b,
+  );
+  check(
+    "aging byClient: B worst at 13k",
+    aging.byClient[0].clientName === "B" && aging.byClient[0].amount === 13_000,
+    aging.byClient,
+  );
+}
+
+// --- DSO ---
+{
+  const dso = buildDso(
+    [
+      { invoiceNumber: "A", issueDate: new Date(2026, 5, 1), paidDate: new Date(2026, 5, 11), amount: 10_000 },
+      { invoiceNumber: "B", issueDate: new Date(2026, 5, 1), paidDate: new Date(2026, 6, 1), amount: 10_000 },
+      { invoiceNumber: "C", issueDate: new Date(2026, 6, 1), paidDate: new Date(2026, 6, 6), amount: 40_000 },
+      { invoiceNumber: "D", issueDate: new Date(2026, 0, 1), paidDate: new Date(2026, 1, 1), amount: 5_000 }, // paid before window
+      { invoiceNumber: "E", issueDate: new Date(2026, 7, 1), paidDate: null, amount: 9_000 }, // unpaid
+    ],
+    new Date(2026, 5, 1),
+    new Date(2026, 8, 1),
+  );
+  check(
+    "DSO: avg 15, median 10, weighted 10, paidCount 3, slowest B",
+    dso.avgDays === 15 &&
+      dso.medianDays === 10 &&
+      dso.weightedAvgDays === 10 &&
+      dso.paidCount === 3 &&
+      dso.slowest[0].invoiceNumber === "B",
+    dso,
+  );
+}
+
+// --- expense categories ---
+{
+  const exp = buildExpenseByCategory(
+    [
+      { category: "freelance", amount: 20_000, date: new Date(2026, 5, 5) },
+      { category: "software", amount: 3_000, date: new Date(2026, 5, 10) },
+      { category: "freelance", amount: 5_000, date: new Date(2026, 5, 15) },
+      { category: "travel", amount: 1_000, date: new Date(2026, 4, 1) }, // out of range
+    ],
+    [
+      { category: "rent", amount: 15_000, date: new Date(2026, 5, 1) },
+      { category: "salary", amount: 40_000, date: new Date(2026, 5, 1) },
+    ],
+    new Date(2026, 5, 1),
+    new Date(2026, 6, 1),
+  );
+  check(
+    "expense-by-category: project freelance 25k (89.3%), company salary 40k (72.7%)",
+    exp.project[0].category === "freelance" &&
+      exp.project[0].amount === 25_000 &&
+      exp.project[0].pct === 89.3 &&
+      exp.projectTotal === 28_000 &&
+      exp.company[0].category === "salary" &&
+      exp.company[0].pct === 72.7 &&
+      exp.companyTotal === 55_000,
+    exp,
+  );
+
+  const trend = buildCompanyExpenseTrend(
+    [
+      { category: "rent", amount: 15_000, date: new Date(2026, 0, 15) },
+      { category: "rent", amount: 15_000, date: new Date(2026, 1, 15) },
+      { category: "salary", amount: 40_000, date: new Date(2026, 1, 20) },
+    ],
+    new Date(2026, 0, 1),
+    new Date(2026, 2, 1),
+    "month",
+  );
+  check(
+    "company-expense trend: Jan 15k, Feb 55k (rent+salary)",
+    trend.length === 2 &&
+      trend[0].total === 15_000 &&
+      trend[1].total === 55_000 &&
+      trend[1].byCategory.salary === 40_000,
+    trend,
+  );
+}
+
+// --- client ranking ---
+{
+  const rank = buildClientRanking([
+    { id: "a", name: "Alpha", paidInPeriod: 60_000, outstanding: 0, lifetimeValue: 100_000 },
+    { id: "b", name: "Beta", paidInPeriod: 30_000, outstanding: 5_000, lifetimeValue: 50_000 },
+    { id: "c", name: "Gamma", paidInPeriod: 10_000, outstanding: 0, lifetimeValue: 20_000 },
+  ]);
+  check(
+    "client ranking: Alpha #1 60%, cumulative 90% by #2, top3 100%, HHI 4600",
+    rank.rows[0].name === "Alpha" &&
+      rank.rows[0].revenuePct === 60 &&
+      rank.rows[1].cumulativePct === 90 &&
+      rank.top1Pct === 60 &&
+      rank.top3Pct === 100 &&
+      rank.hhi === 4_600,
+    rank,
   );
 }
 
