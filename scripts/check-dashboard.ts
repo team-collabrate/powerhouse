@@ -15,6 +15,12 @@ import {
   type OverheadProjectInput,
 } from "@/lib/overhead";
 import { invoiceTotals, lineAmount } from "@/lib/invoice-total";
+import {
+  resolvePeriod,
+  indianFyBounds,
+  fyQuarterOf,
+  eachBucket,
+} from "@/lib/period";
 
 const now = new Date("2026-09-15T12:00:00Z");
 const d = (offset: number) => {
@@ -339,6 +345,140 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
     "current month profit = −cost (no payment landed)",
     Math.abs(sep.profit + sep.cost) <= 1,
     { profit: sep.profit, cost: sep.cost },
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * period.ts — reporting windows (Indian FY, Apr–Mar)
+ * ------------------------------------------------------------------ */
+console.log("\nperiod:");
+
+const pNow = new Date(2026, 8, 15); // 15 Sep 2026, server-local
+
+// --- Indian FY boundaries ---
+{
+  const beforeApril = indianFyBounds(new Date(2026, 2, 31)); // 31 Mar 2026
+  check(
+    "FY of 31 Mar 2026 starts 1 Apr 2025",
+    beforeApril.start.getFullYear() === 2025 &&
+      beforeApril.start.getMonth() === 3 &&
+      beforeApril.end.getFullYear() === 2026,
+    beforeApril,
+  );
+  const onApril = indianFyBounds(new Date(2026, 3, 1)); // 1 Apr 2026
+  check(
+    "FY of 1 Apr 2026 starts 1 Apr 2026",
+    onApril.start.getFullYear() === 2026 && onApril.start.getMonth() === 3,
+    onApril,
+  );
+}
+
+// --- FY quarters ---
+check(
+  "15 Apr 2026 → Q1 FY 2026-27",
+  fyQuarterOf(new Date(2026, 3, 15)).label === "Q1 FY 2026-27",
+  fyQuarterOf(new Date(2026, 3, 15)),
+);
+check(
+  "15 Jan 2026 → Q4 FY 2025-26",
+  fyQuarterOf(new Date(2026, 0, 15)).label === "Q4 FY 2025-26",
+  fyQuarterOf(new Date(2026, 0, 15)),
+);
+
+// --- presets resolve against pNow ---
+{
+  const m = resolvePeriod({ preset: "this_month" }, pNow);
+  check(
+    "this_month = Sep 2026, prev = Aug 2026",
+    m.from.getMonth() === 8 &&
+      m.to.getMonth() === 9 &&
+      m.label === "September 2026" &&
+      m.prev.from.getMonth() === 7 &&
+      m.prev.to.getMonth() === 8 &&
+      m.bucket === "day" &&
+      m.cacheKey === "this_month",
+    { label: m.label, prev: m.prev.label, bucket: m.bucket },
+  );
+
+  const q = resolvePeriod({ preset: "this_quarter" }, pNow);
+  check(
+    "this_quarter = Q2 (Jul–Oct), week buckets",
+    q.from.getMonth() === 6 &&
+      q.to.getMonth() === 9 &&
+      q.label === "Q2 FY 2026-27" &&
+      q.bucket === "week",
+    { label: q.label, from: q.from.getMonth(), bucket: q.bucket },
+  );
+
+  const fy = resolvePeriod({ preset: "this_fy" }, pNow);
+  check(
+    "this_fy = Apr 2026 → Apr 2027, prev = FY 2025-26, month buckets",
+    fy.from.getFullYear() === 2026 &&
+      fy.from.getMonth() === 3 &&
+      fy.to.getFullYear() === 2027 &&
+      fy.label === "FY 2026-27" &&
+      fy.prev.label === "FY 2025-26" &&
+      fy.prev.from.getFullYear() === 2025 &&
+      fy.bucket === "month",
+    { label: fy.label, prev: fy.prev.label, bucket: fy.bucket },
+  );
+
+  const l12 = resolvePeriod({ preset: "last_12_months" }, pNow);
+  check(
+    "last_12_months spans 12 months ending this month",
+    l12.from.getFullYear() === 2025 &&
+      l12.from.getMonth() === 9 &&
+      l12.to.getFullYear() === 2026 &&
+      l12.to.getMonth() === 9,
+    { from: l12.from.toISOString().slice(0, 7), to: l12.to.toISOString().slice(0, 7) },
+  );
+}
+
+// --- custom range ---
+{
+  const c = resolvePeriod(
+    { preset: "custom", from: "2026-06-01", to: "2026-07-01" },
+    pNow,
+  );
+  check(
+    "custom Jun 2026: window + prior + cacheKey",
+    c.from.getMonth() === 5 &&
+      c.to.getMonth() === 6 &&
+      c.prev.from.getMonth() === 4 &&
+      c.prev.to.getMonth() === 5 &&
+      c.cacheKey === "custom:2026-06-01:2026-07-01",
+    { prev: [c.prev.from.getMonth(), c.prev.to.getMonth()], key: c.cacheKey },
+  );
+
+  const capped = resolvePeriod(
+    { preset: "custom", from: "2020-01-01", to: "2026-01-01" },
+    pNow,
+  );
+  const cappedDays =
+    (capped.to.getTime() - capped.from.getTime()) / 86_400_000;
+  check("custom range capped at ~24 months", cappedDays <= 24 * 31, cappedDays);
+
+  const invalid = resolvePeriod(
+    { preset: "custom", from: "2026-07-01", to: "2026-06-01" },
+    pNow,
+  );
+  check(
+    "invalid custom (to <= from) falls back to last_12_months",
+    invalid.preset === "last_12_months",
+    invalid.preset,
+  );
+}
+
+// --- eachBucket ---
+{
+  const months = eachBucket(new Date(2026, 0, 1), new Date(2026, 3, 1), "month");
+  check(
+    "eachBucket month: Jan/Feb/Mar 2026",
+    months.length === 3 &&
+      months[0].label === "Jan" &&
+      months[2].label === "Mar" &&
+      months[2].end.getMonth() === 3,
+    months.map((b) => b.label),
   );
 }
 
