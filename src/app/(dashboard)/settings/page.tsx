@@ -12,6 +12,7 @@ import { BrandingCard } from "@/components/settings/BrandingCard";
 import { CompanyExpensesCard } from "@/components/settings/CompanyExpensesCard";
 import { OverheadAllocationCard } from "@/components/settings/OverheadAllocationCard";
 import { ServicesCard } from "@/components/settings/ServicesCard";
+import { ImportDataCard } from "@/components/settings/ImportDataCard";
 import { TeamCard } from "@/components/settings/TeamCard";
 import { getServices } from "@/lib/queries/services";
 
@@ -74,6 +75,8 @@ export default async function SettingsPage() {
       )}
 
       <ServicesCard services={services} />
+
+      <ImportDataCard />
 
       <CompanyExpensesCard data={overhead} />
 

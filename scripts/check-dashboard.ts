@@ -49,6 +49,7 @@ import {
   classifyRevenueShortfall,
   assembleNotifications,
 } from "@/lib/reports/notifications";
+import { buildImportPlan } from "@/lib/import/build-plan";
 
 const now = new Date("2026-09-15T12:00:00Z");
 const d = (offset: number) => {
@@ -1149,6 +1150,54 @@ check("total = subtotal + tax", it1.total === 44840, it1);
 check("no tax → total = subtotal", invoiceTotals([{ quantity: 1, unitPrice: 500 }], 0).total === 500);
 check("empty → zeros", invoiceTotals([], 18).total === 0);
 check("lineAmount rounds to 2dp", lineAmount({ quantity: 3, unitPrice: 33.333 }) === 100);
+
+console.log("\ndata import:");
+{
+  const good = buildImportPlan({
+    clientRows: [
+      { client_ref: "C1", company_name: "Acme LLP", name: "Riya", email: "riya@acme.test", phone: "", address: "", city: "", country: "" },
+    ],
+    projectRows: [
+      { project_ref: "P1", client_ref: "C1", name: "Website", service: "web_dev", status: "active", contract_value: "100000", team_cost: "30000", start_date: "2026-01-01", deadline: "2026-03-01", progress_percentage: "50" },
+    ],
+    invoiceRows: [
+      { invoice_ref: "I1", project_ref: "P1", invoice_number: "", issue_date: "2026-01-15", due_date: "2026-02-15", status: "sent", tax_rate_pct: "18", line_description: "Milestone 1", quantity: "1", unit_price: "50000" },
+      { invoice_ref: "I1", project_ref: "P1", invoice_number: "", issue_date: "", due_date: "", status: "sent", tax_rate_pct: "18", line_description: "Milestone 2", quantity: "1", unit_price: "20000" },
+    ],
+    paymentRows: [
+      { invoice_ref: "I1", amount: "82600", payment_date: "2026-02-10", payment_method: "bank_transfer", reference_number: "" },
+    ],
+  });
+  check("valid sheet → no errors", good.errors.length === 0, good.errors);
+  check("counts match rows", good.counts.clients === 1 && good.counts.projects === 1 && good.counts.invoices === 1 && good.counts.payments === 1, good.counts);
+  check("repeat invoice_ref merges into one invoice with 2 line items", good.plan.invoices[0]?.lineItems.length === 2);
+  check("repeat row's blank dates inherit the first row's, no warning for that row", good.warnings.length === 0, good.warnings);
+
+  const badRef = buildImportPlan({
+    clientRows: [{ client_ref: "C1", company_name: "Acme", name: "Riya", email: "riya@acme.test", phone: "", address: "", city: "", country: "" }],
+    projectRows: [{ project_ref: "P1", client_ref: "C9", name: "Website", service: "web_dev", status: "active", contract_value: "1000", team_cost: "0", start_date: "", deadline: "", progress_percentage: "0" }],
+    invoiceRows: [],
+    paymentRows: [],
+  });
+  check("unknown client_ref on a project → row error, not a throw", badRef.errors.some((e) => e.file === "projects" && /Unknown client_ref/.test(e.message)), badRef.errors);
+
+  const noDates = buildImportPlan({
+    clientRows: [{ client_ref: "C1", company_name: "Acme", name: "Riya", email: "riya@acme.test", phone: "", address: "", city: "", country: "" }],
+    projectRows: [{ project_ref: "P1", client_ref: "C1", name: "Website", service: "web_dev", status: "active", contract_value: "1000", team_cost: "0", start_date: "", deadline: "", progress_percentage: "0" }],
+    invoiceRows: [{ invoice_ref: "I1", project_ref: "P1", invoice_number: "", issue_date: "", due_date: "", status: "draft", tax_rate_pct: "0", line_description: "Deposit", quantity: "1", unit_price: "1000" }],
+    paymentRows: [],
+  });
+  const todayIso = new Date().toISOString().slice(0, 10);
+  check("invoice with no dates at all → defaults both to today, with a warning (not an error)", noDates.errors.length === 0 && noDates.plan.invoices[0]?.dueDate === todayIso && noDates.plan.invoices[0]?.issueDate === todayIso && noDates.warnings.length === 1, [noDates.errors, noDates.plan.invoices[0], noDates.warnings]);
+
+  const missingPaymentDate = buildImportPlan({
+    clientRows: [{ client_ref: "C1", company_name: "Acme", name: "Riya", email: "riya@acme.test", phone: "", address: "", city: "", country: "" }],
+    projectRows: [{ project_ref: "P1", client_ref: "C1", name: "Website", service: "web_dev", status: "active", contract_value: "1000", team_cost: "0", start_date: "", deadline: "", progress_percentage: "0" }],
+    invoiceRows: [{ invoice_ref: "I1", project_ref: "P1", invoice_number: "", issue_date: "2026-01-01", due_date: "2026-02-01", status: "sent", tax_rate_pct: "0", line_description: "Deposit", quantity: "1", unit_price: "1000" }],
+    paymentRows: [{ invoice_ref: "I1", amount: "1000", payment_date: "", payment_method: "cash", reference_number: "" }],
+  });
+  check("payment with no date → real error, never defaulted to today", missingPaymentDate.errors.some((e) => e.file === "payments"), missingPaymentDate.errors);
+}
 
 console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);

@@ -346,6 +346,32 @@ them. **Cached adapters take `PeriodInput` (strings), never a `Date`** — the
   exist or what colours they're tagged. Per-service tag colours are still
   used for identification everywhere else (project rows, the profitability
   table, Settings → Services).
+- **Import data** (`ImportDataCard`, `settings:manage`): bulk-loads clients +
+  projects + invoices + payments from 4 CSVs (clients/projects required,
+  invoices/payments optional) instead of manual entry. A "Copy prompt" button
+  copies `DATA_IMPORT_PROMPT` (`src/lib/import/prompt.ts`) — meant to be
+  pasted into any LLM along with the agency's raw spreadsheet/PDF/notes,
+  which hands back the 4 CSVs in the exact shape below; their raw data never
+  passes through us. `POST /api/settings/import` (`commit=false` for a
+  dry-run preview, `commit=true` to write) parses each file
+  (`src/lib/import/csv.ts`, dependency-free RFC4180) then validates +
+  cross-links rows with the **pure** `buildImportPlan()`
+  (`src/lib/import/build-plan.ts`, unit-tested in `check-dashboard.ts`, no
+  DB) before `commitImportPlan()` (`src/lib/queries/import.ts`) writes it in
+  one transaction. `*_ref` columns (e.g. `client_ref`) exist only to link
+  rows across files — discarded on write, real `cuid()`s generated as usual.
+  Invoice `status` on the sheet is only draft/sent/cancelled — "paid" is
+  never accepted from the sheet, it's derived by running
+  `syncInvoicePaidState` per invoice after its payments land, same as manual
+  entry. Missing dates are handled deliberately, not left to guesswork: an
+  invoice's `due_date`/`issue_date` each fall back to the other, and if
+  *neither* is given both fall back to today — always surfaced as a
+  non-blocking warning in the preview, never a silent invention. A
+  `payment_date` is the one field that's **never** defaulted (it drives
+  DSO/aging/cash-flow reporting directly) — a blank one is a hard row error,
+  and the prompt tells the agency to give their best estimate rather than
+  drop the row. Row-level errors block commit entirely (file + row number +
+  message); warnings don't.
 - Company overhead CRUD (`company_expenses` table): `GET/POST
   /api/company-expenses`, `PATCH/DELETE /api/company-expenses/[id]`.
   Shows normalised $/mo recurring + last-month total.
