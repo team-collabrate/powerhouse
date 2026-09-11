@@ -8,7 +8,8 @@ const color = z
 
 export const serviceCreateSchema = z.object({
   name: z.string().trim().min(1, "Required").max(60),
-  color: color,
+  // no colour picker in the UI anymore — auto-assigned server-side
+  color: color.optional(),
 });
 
 export const serviceUpdateSchema = z

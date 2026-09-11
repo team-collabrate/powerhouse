@@ -4,10 +4,6 @@ import { useEffect, useState } from "react";
 import { Plus, X } from "react-feather";
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
-import {
-  SERVICE_COLOR_OPTIONS,
-  DEFAULT_SERVICE_COLOR,
-} from "@/lib/services";
 
 interface Option {
   slug: string;
@@ -28,7 +24,6 @@ export function ServiceSelect({
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
-  const [color, setColor] = useState(DEFAULT_SERVICE_COLOR);
   const [saving, setSaving] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
 
@@ -45,7 +40,7 @@ export function ServiceSelect({
     const res = await fetch("/api/services", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, color }),
+      body: JSON.stringify({ name }),
     });
     const json = await res.json();
     setSaving(false);
@@ -57,7 +52,6 @@ export function ServiceSelect({
     onChange(json.data.slug);
     setAdding(false);
     setName("");
-    setColor(DEFAULT_SERVICE_COLOR);
   }
 
   if (adding) {
@@ -78,28 +72,8 @@ export function ServiceSelect({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Mobile App, SEO, Retainer"
+          autoFocus
         />
-        <div className="mt-2">
-          <span className="mb-1.5 block text-[13px] font-medium text-ink">
-            Colour
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            {SERVICE_COLOR_OPTIONS.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                title={c.name}
-                onClick={() => setColor(c.value)}
-                className={`h-7 w-7 rounded-full border-2 transition-transform ${
-                  color === c.value
-                    ? "scale-110 border-ink"
-                    : "border-transparent hover:scale-105"
-                }`}
-                style={{ background: c.value }}
-              />
-            ))}
-          </div>
-        </div>
         {addError && <p className="mt-2 text-[12px] text-loss">{addError}</p>}
         <button
           type="button"

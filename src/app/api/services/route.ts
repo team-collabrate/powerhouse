@@ -4,7 +4,7 @@ import { ok, fail, validationError, requireSession, requireCapability } from "@/
 import { logActivity } from "@/lib/activity";
 import { serviceCreateSchema } from "@/lib/validation/service";
 import { getServices } from "@/lib/queries/services";
-import { slugifyService } from "@/lib/services";
+import { slugifyService, SERVICE_COLOR_OPTIONS } from "@/lib/services";
 
 export async function GET(request: Request) {
   const auth = await requireSession();
@@ -37,9 +37,13 @@ export async function POST(request: Request) {
   for (let i = 2; existing.some((s) => s.slug === slug); i++) slug = `${base}_${i}`;
 
   const position = existing.reduce((m, s) => Math.max(m, s.position), -1) + 1;
+  // no colour picker in the UI — cycle the palette so services still
+  // differ a little wherever a colour dot is shown (project rows, tables)
+  const autoColor =
+    color ?? SERVICE_COLOR_OPTIONS[position % SERVICE_COLOR_OPTIONS.length].value;
 
   const row = await prisma.service.create({
-    data: { agencyId: auth.agencyId, slug, name, color, position },
+    data: { agencyId: auth.agencyId, slug, name, color: autoColor, position },
     select: { id: true, slug: true, name: true, color: true, position: true, isActive: true },
   });
 

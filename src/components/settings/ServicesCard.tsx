@@ -5,35 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, X } from "react-feather";
 import { Card, CardHeader } from "@/components/dashboard/Card";
 import { Field } from "@/components/ui/Field";
-import { SERVICE_COLOR_OPTIONS, DEFAULT_SERVICE_COLOR } from "@/lib/services";
 import type { ServiceRow } from "@/lib/queries/services";
-
-function Swatches({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {SERVICE_COLOR_OPTIONS.map((c) => (
-        <button
-          key={c.value}
-          type="button"
-          title={c.name}
-          onClick={() => onChange(c.value)}
-          className={`h-6 w-6 rounded-full border-2 transition-transform ${
-            value === c.value
-              ? "scale-110 border-ink"
-              : "border-transparent hover:scale-105"
-          }`}
-          style={{ background: c.value }}
-        />
-      ))}
-    </div>
-  );
-}
 
 export function ServicesCard({ services }: { services: ServiceRow[] }) {
   const router = useRouter();
@@ -41,15 +13,14 @@ export function ServicesCard({ services }: { services: ServiceRow[] }) {
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
-  const [color, setColor] = useState(DEFAULT_SERVICE_COLOR);
 
-  async function patch(id: string, body: Record<string, unknown>) {
+  async function toggleActive(id: string, isActive: boolean) {
     setBusy(id);
     setError(null);
     const res = await fetch(`/api/services/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ isActive }),
     });
     setBusy(null);
     if (!res.ok) {
@@ -66,7 +37,7 @@ export function ServicesCard({ services }: { services: ServiceRow[] }) {
     const res = await fetch("/api/services", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, color }),
+      body: JSON.stringify({ name }),
     });
     setBusy(null);
     if (!res.ok) {
@@ -76,7 +47,6 @@ export function ServicesCard({ services }: { services: ServiceRow[] }) {
     }
     setAdding(false);
     setName("");
-    setColor(DEFAULT_SERVICE_COLOR);
     router.refresh();
   }
 
@@ -84,7 +54,7 @@ export function ServicesCard({ services }: { services: ServiceRow[] }) {
     <Card>
       <CardHeader
         title="Services"
-        subtitle="Categories a project can be tagged with, each with a colour"
+        subtitle="Categories a project can be tagged with"
         menu={false}
       />
       <div className="px-5 pb-5 pt-2">
@@ -96,9 +66,9 @@ export function ServicesCard({ services }: { services: ServiceRow[] }) {
                 s.isActive ? "" : "opacity-50"
               }`}
             >
-              <Swatches
-                value={s.color}
-                onChange={(v) => patch(s.id, { color: v })}
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ background: s.color }}
               />
               <span className="min-w-0 flex-1 text-[13px] font-medium text-ink">
                 {s.name}
@@ -111,7 +81,7 @@ export function ServicesCard({ services }: { services: ServiceRow[] }) {
               <button
                 type="button"
                 disabled={busy === s.id}
-                onClick={() => patch(s.id, { isActive: !s.isActive })}
+                onClick={() => toggleActive(s.id, !s.isActive)}
                 className="text-[12px] font-medium text-ink-3 hover:text-ink-2 disabled:opacity-50"
               >
                 {s.isActive ? "Hide" : "Show"}
@@ -139,13 +109,8 @@ export function ServicesCard({ services }: { services: ServiceRow[] }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Mobile App, SEO, Retainer"
+              autoFocus
             />
-            <div className="mt-2">
-              <span className="mb-1.5 block text-[13px] font-medium text-ink">
-                Colour
-              </span>
-              <Swatches value={color} onChange={setColor} />
-            </div>
             <button
               type="button"
               onClick={create}
