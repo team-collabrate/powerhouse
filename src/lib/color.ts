@@ -112,24 +112,32 @@ export function deriveAccentPalette(input: string): AccentPalette {
   };
 }
 
+const RAMP_STEP_L = 0.13;
+const RAMP_STEP_S = 0.16;
+const RAMP_MAX_L = 0.94;
+const RAMP_MIN_S = 0.1;
+
 /**
- * `count` shades of the agency's own accent colour, strong→near-white — for
+ * `count` shades of the agency's own accent colour, strong→light — for
  * "share of total" charts (service mix) that should read as one hue, not a
  * scatter of unrelated tag colours. Index 0 is the accent itself (same hex
- * `deriveAccentPalette` uses for buttons); later stops lighten and
- * desaturate toward the background.
+ * `deriveAccentPalette` uses for buttons).
+ *
+ * Each stop is a **fixed step from the previous one, by rank** — not a
+ * fraction of the total count — so slice #2 is always a clearly-tinted
+ * secondary shade (never a washed-out near-white just because there are
+ * only 2 services), and adding a 3rd/4th service only appends a new,
+ * slightly lighter stop instead of recomputing — and shifting — every
+ * existing service's colour.
  */
 export function accentShadeRamp(input: string, count: number): string[] {
   if (count <= 0) return [];
   const { accent } = deriveAccentPalette(input);
-  if (count === 1) return [accent];
-
   const [r, g, b] = hexToRgb(accent);
   const { h, s, l } = rgbToHsl(r, g, b);
   return Array.from({ length: count }, (_, i) => {
-    const t = i / (count - 1);
-    const lightness = l + (0.95 - l) * t;
-    const saturation = s * (1 - t) + 0.05 * t;
+    const lightness = clamp(l + RAMP_STEP_L * i, 0, RAMP_MAX_L);
+    const saturation = clamp(s - RAMP_STEP_S * i, RAMP_MIN_S, 1);
     return rgbToHex(...hslToRgb({ h, s: saturation, l: lightness }));
   });
 }
