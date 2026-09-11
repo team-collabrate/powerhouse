@@ -29,8 +29,8 @@ export function AuthShell({
           <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-xs)] bg-accent text-[15px] font-bold text-white">
             P
           </span>
-          <span className="text-[15px] font-semibold tracking-[0.02em] text-ink">
-            POWERHOUSE
+          <span className="font-display text-[18px] font-semibold tracking-[0.02em] text-ink">
+            PROFITIO
           </span>
         </Link>
 
@@ -50,8 +50,8 @@ export function AuthShell({
         <div className="mx-auto w-full space-y-5 sm:w-sm">
           <div className="flex items-center gap-2.5 lg:hidden">
             <Grid2x2PlusIcon className="size-6 text-accent" />
-            <p className="text-[15px] font-semibold tracking-[0.02em] text-ink">
-              POWERHOUSE
+            <p className="font-display text-[18px] font-semibold tracking-[0.02em] text-ink">
+              PROFITIO
             </p>
           </div>
 

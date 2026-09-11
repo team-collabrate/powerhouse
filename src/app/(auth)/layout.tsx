@@ -10,8 +10,8 @@ export default function AuthLayout({
           <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-xs)] bg-accent text-[15px] font-bold text-white">
             P
           </span>
-          <span className="text-[15px] font-semibold tracking-[0.02em] text-ink">
-            POWERHOUSE
+          <span className="font-display text-[18px] font-semibold tracking-[0.02em] text-ink">
+            PROFITIO
           </span>
         </div>
         {children}
