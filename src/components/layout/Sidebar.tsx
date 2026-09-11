@@ -43,7 +43,7 @@ export function Sidebar({
               {agencyName.charAt(0).toUpperCase() || "P"}
             </span>
           )}
-          <span className="truncate text-[15px] font-semibold tracking-[0.02em] text-ink">
+          <span className="truncate font-display text-[15px] font-semibold tracking-[0.02em] text-ink">
             {agencyName.toUpperCase()}
           </span>
         </Link>

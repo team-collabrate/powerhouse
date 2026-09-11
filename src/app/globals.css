@@ -63,6 +63,8 @@
   --color-hairline-strong: var(--hairline-strong);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* Sidebar agency name only — see src/app/layout.tsx for why Sora stands in for Korto. */
+  --font-display: var(--font-sora), var(--font-sans);
 
   --radius-xs: var(--radius-xs);
   --radius-sm: var(--radius-sm);
