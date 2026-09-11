@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Powerhouse
 
-## Getting Started
+Real-time project profitability tracking for contract-based agencies — every
+invoice, expense, and margin in one place. Built with Next.js 16 (App
+Router), Prisma 6, and Supabase (Auth + Postgres + Storage), deployed on
+Vercel.
 
-First, run the development server:
+## Docs
+
+- **[CLAUDE.md](./CLAUDE.md)** — the living reference for how this app is
+  built: stack decisions, data model, every feature area (dashboard,
+  projects, invoices, analytics, settings, auth), and the conventions to
+  follow when changing it.
+- **[DEPLOY.md](./DEPLOY.md)** — deploying to Vercel from scratch (env vars,
+  Supabase Auth config, Resend email setup).
+- **[docs/](./docs)** — the original product/design/engineering blueprint
+  this app was built from.
+
+## Local setup
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in your Supabase + Resend values
+npm run db:migrate           # apply migrations
+npm run db:seed              # optional: seed demo data
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Without a configured `.env.local`, the app still runs and falls back to
+read-only demo data on every page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev          # dev server
+npm run build        # production build
+npm run typecheck    # tsc --noEmit
+npm run lint
+npm test             # pure-function checks, no DB needed
+npm run smoke:live   # exercises every query against your real DB
+npm run db:studio    # Prisma Studio
+```
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+CI (`.github/workflows/ci.yml`) runs typecheck → lint → test → build on
+every push/PR to `main`, with no database or secrets required.

@@ -3,7 +3,13 @@
 # Agency Dashboard
 
 SaaS for contract-based agencies to track real-time project profitability.
-Full blueprint lives in `docs/` (start with `docs/README.md`).
+`docs/` holds the original pre-build planning docs still worth reading:
+`docs/design/DASHBOARD_DESIGN_SPECIFICATION.md` (design tokens, see below,
+LOCKED), `docs/design/DESIGN_DECISIONS_FINAL.md` (stale on color/font only,
+see below), `docs/database/DATA_MODEL.md` and `docs/engineering/{TDD,
+ENGINEERING_PLAN}.md` (original architecture rationale — superseded in
+specifics by this file and `prisma/schema.prisma`, the actual sources of
+truth, but useful for the "why").
 
 ## Stack (decided)
 
@@ -11,8 +17,11 @@ Full blueprint lives in `docs/` (start with `docs/README.md`).
 - **One app, no separate backend** — API in `src/app/api/**/route.ts`
 - **Supabase Auth** for auth (do NOT hand-roll JWT / password hashing)
 - **Prisma 6** + PostgreSQL (Supabase). Schema: `prisma/schema.prisma`
-- **Tailwind v4** (CSS tokens in `src/app/globals.css`), TanStack Query, Zustand,
-  React Hook Form + Zod, `react-feather` icons
+- **Tailwind v4** (CSS tokens in `src/app/globals.css`), Zod for validation,
+  `react-feather` icons (plus `lucide-react` and `framer-motion`, scoped to
+  the auth pages only, see Auth pages below). No client-side data-fetching
+  library or global store — every page is a server component reading
+  straight from Prisma; mutations are plain `fetch` + `router.refresh()`
 
 ## Design tokens (LOCKED — from docs/design/DASHBOARD_DESIGN_SPECIFICATION.md)
 
