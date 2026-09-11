@@ -20,7 +20,7 @@ model Agency {
   id                   String   @id @default(cuid())
   name                 String
   logoUrl              String?  @map("logo_url")
-  brandColor           String   @default("#5cd65c") @map("brand_color")
+  brandColor           String   @default("#9933ff") @map("brand_color")
   monthlyRevenueTarget Decimal  @default(0) @map("monthly_revenue_target")
   overheadMethod       String   @default("manual") @map("overhead_method") // manual, percent, even, contract_share
   overheadRate         Decimal  @default(0) @map("overhead_rate") // fraction 0..1, used when overheadMethod = percent

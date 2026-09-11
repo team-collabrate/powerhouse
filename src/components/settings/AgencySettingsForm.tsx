@@ -10,8 +10,6 @@ export function AgencySettingsForm({ settings }: { settings: AgencySettings }) {
   const [form, setForm] = useState({
     name: settings.name,
     monthlyRevenueTarget: String(settings.monthlyRevenueTarget),
-    brandColor: settings.brandColor,
-    logoUrl: settings.logoUrl ?? "",
     replyToEmail: settings.replyToEmail ?? "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -20,8 +18,6 @@ export function AgencySettingsForm({ settings }: { settings: AgencySettings }) {
   const dirty =
     form.name !== settings.name ||
     Number(form.monthlyRevenueTarget) !== settings.monthlyRevenueTarget ||
-    form.brandColor !== settings.brandColor ||
-    form.logoUrl !== (settings.logoUrl ?? "") ||
     form.replyToEmail !== (settings.replyToEmail ?? "");
 
   function set<K extends keyof typeof form>(k: K, v: string) {
@@ -39,8 +35,6 @@ export function AgencySettingsForm({ settings }: { settings: AgencySettings }) {
       body: JSON.stringify({
         name: form.name,
         monthlyRevenueTarget: form.monthlyRevenueTarget,
-        brandColor: form.brandColor,
-        logoUrl: form.logoUrl,
         replyToEmail: form.replyToEmail,
       }),
     });
@@ -77,44 +71,6 @@ export function AgencySettingsForm({ settings }: { settings: AgencySettings }) {
           error={errors.monthlyRevenueTarget}
         />
       </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block">
-          <span className="mb-1.5 block text-[13px] font-medium text-ink">
-            Brand colour
-          </span>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={form.brandColor}
-              onChange={(e) => set("brandColor", e.target.value)}
-              className="h-10 w-12 cursor-pointer rounded-[var(--radius-sm)] border border-hairline-strong bg-surface p-1"
-            />
-            <input
-              value={form.brandColor}
-              onChange={(e) => set("brandColor", e.target.value)}
-              className="h-10 w-full rounded-[var(--radius-sm)] border border-hairline-strong bg-surface px-3 font-mono text-[13px] outline-none focus:border-accent"
-            />
-          </div>
-          {errors.brandColor && (
-            <span className="mt-1 block text-[12px] text-loss">
-              {errors.brandColor}
-            </span>
-          )}
-        </label>
-        <Field
-          label="Logo URL (optional)"
-          value={form.logoUrl}
-          onChange={(e) => set("logoUrl", e.target.value)}
-          error={errors.logoUrl}
-          placeholder="https://…"
-        />
-      </div>
-
-      <p className="text-[12px] text-ink-3">
-        Brand colour and logo are stored for the upcoming client portal and
-        invoice PDFs — they don&apos;t restyle this dashboard.
-      </p>
 
       <div className="border-t border-hairline pt-4">
         <Field

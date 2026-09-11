@@ -8,6 +8,7 @@ import {
 } from "@/lib/queries/settings";
 import { Card, CardHeader } from "@/components/dashboard/Card";
 import { AgencySettingsForm } from "@/components/settings/AgencySettingsForm";
+import { BrandingCard } from "@/components/settings/BrandingCard";
 import { CompanyExpensesCard } from "@/components/settings/CompanyExpensesCard";
 import { OverheadAllocationCard } from "@/components/settings/OverheadAllocationCard";
 import { ServicesCard } from "@/components/settings/ServicesCard";
@@ -62,6 +63,14 @@ export default async function SettingsPage() {
           <CardHeader title="Agency" menu={false} />
           <AgencySettingsForm settings={settings} />
         </Card>
+      )}
+
+      {settings && (
+        <BrandingCard
+          name={settings.name}
+          logoUrl={settings.logoUrl}
+          brandColor={settings.brandColor}
+        />
       )}
 
       <ServicesCard services={services} />

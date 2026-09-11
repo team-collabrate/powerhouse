@@ -243,7 +243,8 @@ DB co-located in Singapore · deployed to Vercel (powerhouse-co.vercel.app) ·
 per-agency reply-to · period-scoped /analytics (FY presets + custom range,
 prior-period deltas, payment-method mix, GST-by-quarter, aging, DSO,
 expense-by-category, client concentration) · cross-project milestones +
-notification kinds · invoice viewedDate.
+notification kinds · invoice viewedDate · custom colour-tagged services ·
+white-label branding (per-agency logo + accent colour, real file upload).
 Time tracking is intentionally OUT (see Profit calculation above).
 Next: portal "pay now" is parked (payments handled outside the app).
 
@@ -297,15 +298,35 @@ them. **Cached adapters take `PeriodInput` (strings), never a `Date`** — the
 
 ### Settings (`/settings`, `settings:manage` = admin only)
 
-- Agency form (name, monthly revenue target, brand colour, logo URL,
-  reply-to email) → `PATCH /api/settings`. The revenue target drives the
-  "% of target" hint + progress bar on the dashboard Revenue KPI
-  (`KpiView.hint` / `.progress`). Brand colour + logo are stored only — they
-  don't restyle the dashboard. **Reply-to email** (`agencies.reply_to_email`,
-  nullable) is the address a client's reply lands in — outbound invoice /
-  invite mail still sends `from` the platform `RESEND_FROM`, but carries this
-  as the `replyTo` header. Blank → `RESEND_REPLY_TO` env fallback (also
+- Agency form (name, monthly revenue target, reply-to email) →
+  `PATCH /api/settings`. The revenue target drives the "% of target" hint +
+  progress bar on the dashboard Revenue KPI (`KpiView.hint` / `.progress`).
+  **Reply-to email** (`agencies.reply_to_email`, nullable) is the address a
+  client's reply lands in — outbound invoice / invite mail still sends
+  `from` the platform `RESEND_FROM`, but carries this as the `replyTo`
+  header. Blank → `RESEND_REPLY_TO` env fallback (also
   optional). Resolved in `src/lib/email.ts` (`resolveReplyTo`).
+- **Branding (white-label)** — `BrandingCard`: logo upload + a free-form
+  accent-colour picker (native `<input type="color">`, any hue — not a
+  swatch list). Both now restyle the **whole signed-in app**, not just
+  client-facing pages. `(dashboard)/layout.tsx` fetches
+  `getAgencyBranding(agencyId)` (cached) every request, runs
+  `deriveAccentPalette(brandColor)` (`src/lib/color.ts`, pure — HSL-clamps
+  lightness so any picked colour stays legible as a button/accent regardless
+  of how light or dark it is; exact match to Powerhouse's own `#9933ff`
+  returns the original hand-picked triad verbatim, so unconfigured agencies
+  see zero change) and injects `:root{--accent;--accent-strong;--accent-soft}`
+  via an inline `<style>` in the layout. `<Sidebar>` swaps "POWERHOUSE" for
+  the agency's own name + logo (falls back to an initial-in-a-square in the
+  derived accent colour when no logo is set). New agencies default to
+  `brand_color = '#9933ff'` (Powerhouse purple) so a fresh signup looks
+  unbranded until they choose otherwise.
+  Logo upload is real file storage: `POST/DELETE /api/settings/logo`
+  (`settings:manage`) → `src/lib/storage.ts` uploads to a public Supabase
+  Storage bucket (`agency-logos`, auto-created on first use) at a fixed
+  `{agencyId}/logo.<ext>` path with a cache-busting `?v=` query string on the
+  saved URL; PNG/JPG/WEBP/SVG, 2MB cap. `brandColor` still saves through the
+  existing `PATCH /api/settings`.
 - Company overhead CRUD (`company_expenses` table): `GET/POST
   /api/company-expenses`, `PATCH/DELETE /api/company-expenses/[id]`.
   Shows normalised $/mo recurring + last-month total.

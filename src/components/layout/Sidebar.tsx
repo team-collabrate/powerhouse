@@ -14,18 +14,37 @@ function initials(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function Sidebar({ name, role }: { name: string; role: string }) {
+export function Sidebar({
+  name,
+  role,
+  agencyName = "Powerhouse",
+  agencyLogoUrl = null,
+}: {
+  name: string;
+  role: string;
+  agencyName?: string;
+  agencyLogoUrl?: string | null;
+}) {
   const pathname = usePathname();
 
   return (
     <aside className="fixed left-0 top-0 z-20 hidden h-screen w-[248px] flex-col bg-surface-sunken px-3 py-4 lg:flex">
       <div className="flex items-center justify-between px-2 py-1">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-xs)] bg-accent text-[15px] font-bold text-white">
-            P
-          </span>
-          <span className="text-[15px] font-semibold tracking-[0.02em] text-ink">
-            POWERHOUSE
+        <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
+          {agencyLogoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- external, agency-supplied URL
+            <img
+              src={agencyLogoUrl}
+              alt=""
+              className="h-8 w-8 shrink-0 rounded-[var(--radius-xs)] object-cover"
+            />
+          ) : (
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[var(--radius-xs)] bg-accent text-[15px] font-bold text-white">
+              {agencyName.charAt(0).toUpperCase() || "P"}
+            </span>
+          )}
+          <span className="truncate text-[15px] font-semibold tracking-[0.02em] text-ink">
+            {agencyName.toUpperCase()}
           </span>
         </Link>
         <button

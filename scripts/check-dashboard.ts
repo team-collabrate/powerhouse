@@ -35,6 +35,7 @@ import {
   buildCompanyExpenseTrend,
 } from "@/lib/reports/expense-categories";
 import { buildClientRanking } from "@/lib/reports/client-ranking";
+import { normalizeHex, deriveAccentPalette, DEFAULT_ACCENT } from "@/lib/color";
 import { buildMilestoneRollup } from "@/lib/reports/milestone-rollup";
 import {
   classifyInvoice,
@@ -884,6 +885,59 @@ console.log("\nmilestones + notifications:");
       asm.items[2].severity === "medium" &&
       asm.count === 2,
     asm,
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * src/lib/color.ts — per-agency accent derivation
+ * ------------------------------------------------------------------ */
+console.log("\ncolor:");
+
+const rgbSum = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  return ((n >> 16) & 255) + ((n >> 8) & 255) + (n & 255);
+};
+const HEX_RE = /^#[0-9a-f]{6}$/;
+
+check("normalizeHex uppercases-and-lowercases consistently", normalizeHex("#9933FF") === "#9933ff");
+check("normalizeHex accepts a bare hex (no #)", normalizeHex("9933ff") === "#9933ff");
+check("normalizeHex rejects garbage", normalizeHex("not-a-color") === null);
+
+{
+  const pale = deriveAccentPalette("#ffff99"); // very light yellow
+  check(
+    "pale input: all three colours are valid hex",
+    HEX_RE.test(pale.accent) && HEX_RE.test(pale.accentStrong) && HEX_RE.test(pale.accentSoft),
+    pale,
+  );
+  check(
+    "pale input: accent is darkened for legible white button text",
+    rgbSum(pale.accent) < rgbSum("#ffff99"),
+    { accent: pale.accent, sum: rgbSum(pale.accent) },
+  );
+
+  const dark = deriveAccentPalette("#1a0033"); // near-black purple
+  check(
+    "very dark input: accent is lightened to stay visible",
+    rgbSum(dark.accent) > rgbSum("#1a0033"),
+    { accent: dark.accent, sum: rgbSum(dark.accent) },
+  );
+
+  const mid = deriveAccentPalette("#3366cc");
+  check(
+    "accentStrong is darker than accent",
+    rgbSum(mid.accentStrong) < rgbSum(mid.accent),
+    mid,
+  );
+  check(
+    "accentSoft is much lighter than accent (a tint)",
+    rgbSum(mid.accentSoft) > rgbSum(mid.accent),
+    mid,
+  );
+
+  check(
+    "invalid input falls back to the default Powerhouse accent",
+    deriveAccentPalette("nonsense").accent === deriveAccentPalette(DEFAULT_ACCENT).accent,
   );
 }
 
