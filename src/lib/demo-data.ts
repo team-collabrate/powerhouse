@@ -67,10 +67,10 @@ export const DEMO_DASHBOARD: DashboardView = {
     tickIndices: [0, 2, 4, 6, 8, 10, 11],
   },
   services: [
-    { label: "Web Development", value: 38, color: "var(--accent)" },
-    { label: "Brand & Design", value: 27, color: "#c9a3ff" },
-    { label: "Marketing", value: 21, color: "#e4d3ff" },
-    { label: "Consulting", value: 14, color: "#efeaf5" },
+    { label: "Web Development", value: 38, margin: 46, color: "var(--accent)" },
+    { label: "Brand & Design", value: 27, margin: 39, color: "#c9a3ff" },
+    { label: "Marketing", value: 21, margin: 58, color: "#e4d3ff" },
+    { label: "Consulting", value: 14, margin: 33, color: "#efeaf5" },
   ],
   topProjects: [
     { name: "Kirana Fresh Rebrand", client: "Kirana Fresh", margin: 61.2, contract: "₹33,60,000", profit: "₹20,56,000" },

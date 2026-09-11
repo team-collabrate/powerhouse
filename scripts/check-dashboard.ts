@@ -212,6 +212,21 @@ check(
   Math.abs(v.services.reduce((s, x) => s + x.value, 0) - 100) <= 2,
   v.services,
 );
+check(
+  "service margin: Consulting slice = 50% (its one project, exact)",
+  v.services.find((s) => s.label === "Consulting")?.margin === 50,
+  v.services,
+);
+check(
+  "service margin: Web Development slice = 42%",
+  v.services.find((s) => s.label === "Web Development")?.margin === 42,
+  v.services,
+);
+check(
+  "service margin: every slice is a finite number",
+  v.services.every((s) => Number.isFinite(s.margin)),
+  v.services,
+);
 check("top projects sorted by margin desc", v.topProjects.every((p, i, a) => i === 0 || a[i - 1].margin >= p.margin));
 check(
   "top projects span all open projects, not just active (Old Delivered @ 50% ranks first)",
@@ -423,6 +438,29 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
     "current month profit = −cost (no payment landed)",
     Math.abs(sep.profit + sep.cost) <= 1,
     { profit: sep.profit, cost: sep.cost },
+  );
+}
+
+// Slice 6 — service-mix margin: a loss-making service line shows negative,
+// alongside a profitable one, without disturbing each other.
+{
+  const r = buildDashboardView(
+    mkInputs({
+      projects: [
+        mkProject({ id: "p1", serviceType: "consulting", contractValue: 10_000, teamCost: 4_000 }), // profit 6,000 → 60%
+        mkProject({ id: "p2", serviceType: "marketing", contractValue: 10_000, teamCost: 15_000 }), // profit -5,000 → -50%
+      ],
+    }),
+  );
+  check(
+    "service margin: loss-making service line is negative",
+    r.services.find((s) => s.label === "Marketing")?.margin === -50,
+    r.services,
+  );
+  check(
+    "service margin: the profitable line beside it is unaffected",
+    r.services.find((s) => s.label === "Consulting")?.margin === 60,
+    r.services,
   );
 }
 

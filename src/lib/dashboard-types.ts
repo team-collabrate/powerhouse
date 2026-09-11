@@ -41,8 +41,10 @@ export interface ProfitSeriesView {
 
 export interface ServiceSlice {
   label: string;
-  value: number; // percentage 0-100
+  value: number; // percentage 0-100 of total contract value
   color: string;
+  /** profit margin % for this service line (Σprofit/Σcontract); can be negative */
+  margin: number;
 }
 
 export interface TopProjectView {

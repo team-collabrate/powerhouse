@@ -281,21 +281,25 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     Math.max(1, ...points.flatMap((p) => [p.revenue, p.cost, Math.max(0, p.profit)])),
   );
 
-  // ---- service mix (share of contract value) ----
-  const byService = new Map<string, number>();
-  for (const p of projects) {
-    byService.set(p.serviceType, (byService.get(p.serviceType) ?? 0) + p.contractValue);
+  // ---- service mix (share of contract value + profit margin) ----
+  const byService = new Map<string, { contract: number; profit: number }>();
+  for (const x of withProfit) {
+    const agg = byService.get(x.project.serviceType) ?? { contract: 0, profit: 0 };
+    agg.contract += x.project.contractValue;
+    agg.profit += x.profit;
+    byService.set(x.project.serviceType, agg);
   }
-  const serviceTotal = [...byService.values()].reduce((s, v) => s + v, 0);
+  const serviceTotal = [...byService.values()].reduce((s, v) => s + v.contract, 0);
   const rankedServices = [...byService.entries()]
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => b[1].contract - a[1].contract)
     .slice(0, 6);
   const shades = accentShadeRamp(input.brandColor, rankedServices.length);
   const services =
     serviceTotal > 0
-      ? rankedServices.map(([type, value], i) => ({
+      ? rankedServices.map(([type, agg], i) => ({
           label: serviceLabel(input.services, type),
-          value: Math.round((value / serviceTotal) * 100),
+          value: Math.round((agg.contract / serviceTotal) * 100),
+          margin: agg.contract > 0 ? Math.round((agg.profit / agg.contract) * 100) : 0,
           // shaded by rank from the agency's own accent colour (dark→light)
           // — one hue for the donut, not each service's own tag colour
           // (that stays on project rows/tags)
