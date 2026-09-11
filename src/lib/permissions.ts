@@ -12,10 +12,10 @@ export type Capability =
 
 /**
  * What each role may do in the main app.
- *   admin        — everything
- *   manager      — all project + financial operations
- *   team_member  — read everything, log expenses only
- *   client       — no main-app access (they use a portal link)
+ *   admin:       everything
+ *   manager:     all project + financial operations
+ *   team_member: read everything, log expenses only
+ *   client:      no main-app access (they use a portal link)
  */
 const MATRIX: Record<Role, Capability[]> = {
   admin: [

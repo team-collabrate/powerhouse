@@ -86,7 +86,7 @@ export function InvoicePaymentsCard({ invoice }: { invoice: InvoiceDetail }) {
                       p.paymentMethod}
                   </td>
                   <td className="px-3 py-2 text-[12.5px] text-ink-3">
-                    {p.referenceNumber || "—"}
+                    {p.referenceNumber || "-"}
                   </td>
                   <td className="tnum px-3 py-2 text-[12.5px] font-medium text-ink">
                     {formatCurrency(p.amount)}

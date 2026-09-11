@@ -16,7 +16,7 @@ export function DeliverablesSection({
         <Stat label={`Completed in ${periodLabel}`} value={String(data.completedInPeriod)} />
         <Stat
           label="On-time rate (all time)"
-          value={data.onTimeRate == null ? "—" : `${data.onTimeRate}%`}
+          value={data.onTimeRate == null ? "-" : `${data.onTimeRate}%`}
         />
         <Stat label="Overdue now" value={String(data.overdue.length)} />
       </div>

@@ -1,4 +1,4 @@
-/* Minimal RFC4180 CSV parser — pure, no deps. Handles quoted fields with
+/* Minimal RFC4180 CSV parser, pure, no deps. Handles quoted fields with
    embedded commas/newlines and "" escaped quotes. */
 
 export function parseCsv(text: string): string[][] {

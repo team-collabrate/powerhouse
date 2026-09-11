@@ -15,7 +15,7 @@ async function fetchAgencyBranding(agencyId: string): Promise<AgencyBranding> {
   return a ?? { name: "Powerhouse", logoUrl: null, brandColor: "" };
 }
 
-/** White-label bits for the signed-in layout — name/logo/colour, cheap + cached. */
+/** White-label bits for the signed-in layout: name/logo/colour, cheap + cached. */
 export const getAgencyBranding = cacheAgencyRead(
   fetchAgencyBranding,
   ["agency-branding"],

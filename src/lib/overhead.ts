@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------ *
- * Overhead allocation — PURE. No Prisma import so `npm test` can pull
+ * Overhead allocation: PURE. No Prisma import so `npm test` can pull
  * this in directly. The DB adapter lives in src/lib/queries/overhead.ts.
  *
  * Company overhead (the `company_expenses` table) is distributed down to
@@ -87,7 +87,7 @@ export interface OverheadProjectInput {
   contractValue: number;
   startDate: Date | null;
   deadline: Date | null;
-  /** the stored Project.allocatedOverhead column — > 0 pins the value */
+  /** the stored Project.allocatedOverhead column: > 0 pins the value */
   overrideOverhead: number;
 }
 

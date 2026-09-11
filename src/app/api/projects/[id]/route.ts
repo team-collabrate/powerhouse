@@ -95,7 +95,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   });
   if (!existing) return fail("NOT_FOUND", "Project not found", 404);
 
-  // soft delete — never hard-delete (audit trail + linked invoices)
+  // soft delete: never hard-delete (audit trail + linked invoices)
   await prisma.project.update({ where: { id }, data: { status: "closed" } });
 
   await logActivity({

@@ -42,7 +42,7 @@ export default async function DashboardLayout({
       agencyName = branding.name || agencyName;
       agencyLogoUrl = branding.logoUrl;
       // brandColor is a per-agency <input type="color"> value, not our own
-      // design-token purple — derive a legible accent/hover/tint triad from
+      // design-token purple: derive a legible accent/hover/tint triad from
       // whatever they picked (falls back to Powerhouse's purple if unset).
       const { accent, accentStrong, accentSoft } = deriveAccentPalette(
         branding.brandColor,

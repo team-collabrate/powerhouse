@@ -29,7 +29,7 @@ const NO_OP: OverheadResolver = {
 
 /**
  * Load the agency's overhead rule + expense pool + project portfolio and
- * resolve every project's allocated overhead once. Never throws — the
+ * resolve every project's allocated overhead once. Never throws: the
  * pages that consume this (/projects, /analytics, /clients/[id],
  * /projects/[id]) have no demo fallback, so a failure returns a no-op
  * resolver (behaves exactly like method = "manual").

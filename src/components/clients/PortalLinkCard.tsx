@@ -40,7 +40,7 @@ export function PortalLinkCard({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* clipboard blocked — user can select manually */
+      /* clipboard blocked; user can select manually */
     }
   }
 
@@ -48,7 +48,7 @@ export function PortalLinkCard({
     <Card>
       <CardHeader
         title="Client portal"
-        subtitle="A read-only link — no login. Shows this client their projects and invoices."
+        subtitle="A read-only link (no login). Shows this client their projects and invoices."
         menu={false}
       />
       <div className="px-5 pb-5 pt-3">

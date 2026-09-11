@@ -175,7 +175,7 @@ export function InvoiceDialog({
 
               {isEdit ? (
                 <p className="text-[12px] text-ink-3">
-                  This invoice has been sent — only the due date and notes can
+                  This invoice has been sent: only the due date and notes can
                   change.
                 </p>
               ) : (

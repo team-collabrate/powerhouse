@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
-  Design tokens — docs/design/DASHBOARD_DESIGN_SPECIFICATION.md
+  Design tokens: docs/design/DASHBOARD_DESIGN_SPECIFICATION.md
   Palette: green #5cd65c (growth/profit, semantic only), purple #9933ff (single accent).
   Font: Inter. Light mode only for MVP (dark mode = Phase 2).
 
@@ -63,7 +63,7 @@
   --color-hairline-strong: var(--hairline-strong);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  /* Sidebar agency name only — see src/app/layout.tsx for why Sora stands in for Korto. */
+  /* Sidebar agency name only. See src/app/layout.tsx for why Sora stands in for Korto. */
   --font-display: var(--font-sora), var(--font-sans);
 
   --radius-xs: var(--radius-xs);

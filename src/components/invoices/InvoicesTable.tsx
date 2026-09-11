@@ -53,7 +53,7 @@ export function InvoicesTable({ items }: { items: InvoiceListItem[] }) {
               </td>
               <td className="tnum px-4 py-3 text-[13px]">
                 {i.balance === 0 ? (
-                  <span className="text-ink-3">—</span>
+                  <span className="text-ink-3">-</span>
                 ) : (
                   <span
                     className={

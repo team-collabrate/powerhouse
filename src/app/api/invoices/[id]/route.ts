@@ -32,7 +32,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const body = await request.json().catch(() => null);
 
-  // Full editor save (line items + tax + dates) — draft only.
+  // Full editor save (line items + tax + dates): draft only.
   if (body && Array.isArray(body.lineItems)) {
     if (existing.status !== "draft") {
       return fail(
@@ -84,7 +84,7 @@ export async function PATCH(request: Request, { params }: Params) {
     return ok({ id });
   }
 
-  // Light edit (notes / due date) — allowed on sent/overdue too.
+  // Light edit (notes / due date): allowed on sent/overdue too.
   const parsed = invoiceUpdateSchema.safeParse(body);
   if (!parsed.success) return validationError(parsed.error);
   const input = parsed.data;
@@ -123,7 +123,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (existing.status !== "draft")
     return fail(
       "INVALID_STATE",
-      "Only drafts can be deleted — cancel a sent invoice instead",
+      "Only drafts can be deleted. Cancel a sent invoice instead.",
       409,
     );
 

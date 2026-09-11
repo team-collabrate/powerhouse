@@ -26,7 +26,7 @@ export interface MilestoneRollup {
   upcoming: MilestoneRollupRow[];
   /** open, past due, most overdue first */
   overdue: MilestoneRollupRow[];
-  /** completed with `completedDate` in [from, to) — only when a period is given */
+  /** completed with `completedDate` in [from, to); only when a period is given */
   completedInPeriod: number;
   /** of completed milestones, the share finished on or before their due date */
   onTimeRate: number | null;

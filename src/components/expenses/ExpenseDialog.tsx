@@ -42,7 +42,7 @@ export function ExpenseDialog({
   expense,
   trigger,
 }: {
-  /** fixes the project (project detail page) — hides the picker */
+  /** fixes the project (project detail page); hides the picker */
   projectId?: string;
   /** options for the picker (standalone /expenses page) */
   projects?: { id: string; name: string }[];

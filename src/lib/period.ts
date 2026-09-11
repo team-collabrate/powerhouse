@@ -1,9 +1,9 @@
 /**
- * Reporting periods — pure, client-safe.
+ * Reporting periods: pure, client-safe.
  *
  * MUST NOT import from `@/lib/prisma`, `@/lib/cache`, or `next/*`. It is
  * imported by the `"use client"` period picker, and cached query adapters
- * take a `PeriodInput` (plain strings) — never a `Date` — so the
+ * take a `PeriodInput` (plain strings), never a `Date`, so the
  * `unstable_cache` key stays low-cardinality. `resolvePeriod()` runs *inside*
  * those adapters.
  *
@@ -11,7 +11,7 @@
  * (Q1 Apr–Jun, Q2 Jul–Sep, Q3 Oct–Dec, Q4 Jan–Mar).
  *
  * All dates are built with `new Date(y, m, d)` (server-local; Vercel runs
- * UTC). FY/quarter edges therefore shift a few hours from IST at edge-of-day —
+ * UTC). FY/quarter edges therefore shift a few hours from IST at edge-of-day;
  * immaterial for reporting.
  */
 
@@ -43,9 +43,9 @@ export const PERIOD_PRESET_LABELS: Record<PeriodPreset, string> = {
 
 export interface PeriodInput {
   preset: PeriodPreset;
-  /** ISO yyyy-mm-dd — only read when preset === "custom" */
+  /** ISO yyyy-mm-dd; only read when preset === "custom" */
   from?: string;
-  /** ISO yyyy-mm-dd, exclusive end — only read when preset === "custom" */
+  /** ISO yyyy-mm-dd, exclusive end; only read when preset === "custom" */
   to?: string;
 }
 

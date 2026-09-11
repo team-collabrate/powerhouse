@@ -18,7 +18,7 @@ export function GstTable({
         </span>{" "}
         tax on {formatCurrency(summary.taxable)} taxable value across{" "}
         {summary.invoiceCount}{" "}
-        {summary.invoiceCount === 1 ? "invoice" : "invoices"} — {periodLabel}.
+        {summary.invoiceCount === 1 ? "invoice" : "invoices"} ({periodLabel}).
       </p>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[12.5px]">

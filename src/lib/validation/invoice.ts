@@ -14,7 +14,7 @@ const dueError = {
   path: ["dueDate"] as string[],
 };
 
-// create just makes a draft shell — line items are added in the editor
+// create just makes a draft shell; line items are added in the editor
 export const invoiceCreateSchema = z
   .object({
     projectId: z.string().trim().min(1, "Select a project"),
@@ -29,7 +29,7 @@ export const lineItemSchema = z.object({
   unitPrice: z.coerce.number().min(0, "Can't be negative").max(1e12),
 });
 
-// full editor save — draft only
+// full editor save, draft only
 export const invoiceEditSchema = z
   .object({
     issueDate: dateStr.optional(),

@@ -31,6 +31,6 @@ export function bustAgencyData(): void {
     // Next 16: second arg is a cacheLife profile or { expire }; expire now.
     revalidateTag(AGENCY_DATA_TAG, { expire: 0 });
   } catch {
-    // outside a request scope (e.g. a script) — nothing to revalidate
+    // outside a request scope (e.g. a script): nothing to revalidate
   }
 }

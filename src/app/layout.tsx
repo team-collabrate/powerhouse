@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 // Used only for the agency name in the sidebar (Korto by Talbot Type is a
-// paid commercial font — this is the closest free stand-in until a licence
+// paid commercial font. This is the closest free stand-in until a licence
 // + font files are provided). See CLAUDE.md: Inter stays the app-wide font.
 const sora = Sora({
   variable: "--font-sora",

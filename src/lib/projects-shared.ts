@@ -1,4 +1,4 @@
-// Client-safe project constants — kept out of `queries/projects.ts` so
+// Client-safe project constants, kept out of `queries/projects.ts` so
 // client components can import them without pulling in the server cache layer.
 
 export const PROJECT_STATUSES = [

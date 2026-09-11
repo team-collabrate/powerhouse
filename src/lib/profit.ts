@@ -1,5 +1,5 @@
 /*
-  Profit calculation — computed in the app layer, not the database.
+  Profit calculation: computed in the app layer, not the database.
   (Postgres generated columns can't run cross-table subqueries.)
 
   Projects are contract + duration based; there is no time logging. Team cost

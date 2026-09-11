@@ -1,6 +1,6 @@
 /**
  * Service types are per-agency rows (`Service` model), each with a colour.
- * This module is pure + client-safe (no Prisma) — it holds the colour
+ * This module is pure + client-safe (no Prisma); it holds the colour
  * palette, the built-in defaults, and the slug/label/colour resolvers.
  */
 

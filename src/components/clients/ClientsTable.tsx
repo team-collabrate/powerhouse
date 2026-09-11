@@ -57,7 +57,7 @@ export function ClientsTable({ items }: { items: ClientListItem[] }) {
               </td>
               <td className="tnum px-4 py-3 text-[13px]">
                 {c.outstanding === 0 ? (
-                  <span className="text-ink-3">—</span>
+                  <span className="text-ink-3">-</span>
                 ) : (
                   <span className="text-ink-2">
                     {formatCurrency(c.outstanding)}

@@ -12,7 +12,7 @@ const steps = [
   {
     icon: Briefcase,
     title: "Create a project",
-    body: "Set the contract value and estimated team cost — that's the profit baseline.",
+    body: "Set the contract value and estimated team cost: that's the profit baseline.",
     href: "/projects",
     cta: "Go to projects",
   },

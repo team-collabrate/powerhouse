@@ -2,7 +2,7 @@ import { AppleIcon } from "lucide-react";
 import { buttonVariants } from "./shad-button";
 import { ComingSoonButton } from "@/components/ui/ComingSoonButton";
 
-// lucide-react dropped brand icons (trademark policy) — plain inline marks,
+// lucide-react dropped brand icons (trademark policy); plain inline marks,
 // same idiom as the Google glyph below.
 const GoogleIcon = (props: React.ComponentProps<"svg">) => (
   <svg
@@ -26,7 +26,7 @@ const GithubIcon = (props: React.ComponentProps<"svg">) => (
   </svg>
 );
 
-/** None of these providers are wired in Supabase yet — clicking shows the
+/** None of these providers are wired in Supabase yet; clicking shows the
  * same "coming soon" bubble used elsewhere, not a dead/broken action. */
 export function OAuthRow() {
   const cls = buttonVariants({ size: "lg", className: "w-full" });

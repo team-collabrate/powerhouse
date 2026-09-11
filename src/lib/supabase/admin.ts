@@ -1,7 +1,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Service-role Supabase client — bypasses RLS and can use the auth admin API.
+ * Service-role Supabase client: bypasses RLS and can use the auth admin API.
  * Server-only. Returns null if the service key isn't configured.
  */
 export function createAdminClient() {

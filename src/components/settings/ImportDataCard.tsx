@@ -41,7 +41,7 @@ export function ImportDataCard() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      setError("Couldn't copy — your browser blocked clipboard access.");
+      setError("Couldn't copy: your browser blocked clipboard access.");
     }
   }
 
@@ -91,7 +91,7 @@ export function ImportDataCard() {
     const json = await res.json().catch(() => ({}));
     setBusy(null);
     if (!res.ok) {
-      setError(json.error?.message ?? "Import failed — nothing was changed.");
+      setError(json.error?.message ?? "Import failed: nothing was changed.");
       return;
     }
     setCommitted(true);
@@ -115,7 +115,7 @@ export function ImportDataCard() {
             Don&apos;t have a clean spreadsheet? Copy this prompt, paste it into
             ChatGPT/Claude/etc. along with whatever records you already have
             (Excel, PDF, notes), and it&apos;ll hand back the 4 files below.
-            Your data goes straight to the LLM you choose — never through us.
+            Your data goes straight to the LLM you choose, never through us.
           </p>
           <button
             type="button"
@@ -222,7 +222,7 @@ export function ImportDataCard() {
           </button>
         </div>
         <p className="text-[12px] text-ink-3">
-          Always Preview first — Import writes straight to your live data and
+          Always Preview first: Import writes straight to your live data and
           can&apos;t be undone from here.
         </p>
       </div>

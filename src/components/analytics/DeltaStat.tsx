@@ -30,7 +30,7 @@ export function DeltaStat({
       ? `${pointsDelta > 0 ? "+" : ""}${pointsDelta} pts`
       : metric?.deltaPct != null
         ? `${metric.deltaPct > 0 ? "+" : ""}${metric.deltaPct}%`
-        : "—";
+        : "-";
 
   return (
     <div className="rounded-[var(--radius-md)] border border-hairline bg-surface-raised p-4">

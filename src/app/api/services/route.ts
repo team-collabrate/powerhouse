@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   for (let i = 2; existing.some((s) => s.slug === slug); i++) slug = `${base}_${i}`;
 
   const position = existing.reduce((m, s) => Math.max(m, s.position), -1) + 1;
-  // no colour picker in the UI — cycle the palette so services still
+  // no colour picker in the UI: cycle the palette so services still
   // differ a little wherever a colour dot is shown (project rows, tables)
   const autoColor =
     color ?? SERVICE_COLOR_OPTIONS[position % SERVICE_COLOR_OPTIONS.length].value;

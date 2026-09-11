@@ -50,7 +50,7 @@ export async function POST(request: Request, { params }: Params) {
     return fail(
       "AUTH_ERROR",
       /registered|exists/i.test(msg)
-        ? "That email already has an account — sign in instead."
+        ? "That email already has an account. Sign in instead."
         : msg || "Could not create the account",
       400,
     );

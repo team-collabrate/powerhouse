@@ -52,7 +52,7 @@ export async function POST(_request: Request, { params }: Params) {
     data: { status: "sent", sentDate: new Date() },
   });
 
-  // Render the PDF to attach. Best-effort — a render failure still sends the
+  // Render the PDF to attach. Best-effort: a render failure still sends the
   // email (with the portal link) rather than blocking the whole action.
   let pdf: { filename: string; content: Buffer } | undefined;
   try {

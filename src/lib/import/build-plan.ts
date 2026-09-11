@@ -1,5 +1,5 @@
 /* Pure validation + assembly of the 4 import CSVs into a normalised plan.
-   No Prisma here — takes plain header→value row objects (from csvToObjects)
+   No Prisma here: takes plain header→value row objects (from csvToObjects)
    and returns either row-level errors or a ready-to-commit plan. Tested in
    scripts/check-dashboard.ts, no DB needed. */
 import { z } from "zod";
@@ -11,11 +11,11 @@ const PAYMENT_METHODS = ["bank_transfer", "card", "cheque", "cash", "other"] as 
 
 // payment_date is never defaulted: a payment's date drives DSO/aging/cash-
 // flow reporting directly, so guessing "today" for a historical payment
-// would silently misdate real money — this must come from the source data.
+// would silently misdate real money; this must come from the source data.
 const paymentDateStr = z
   .string()
   .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Missing or invalid date — use YYYY-MM-DD. If the exact date isn't known, use your best estimate (e.g. month-end) rather than leaving it blank.");
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Missing or invalid date. Use YYYY-MM-DD. If the exact date isn't known, use your best estimate (e.g. month-end) rather than leaving it blank.");
 const optDateStr = z
   .string()
   .trim()
@@ -57,7 +57,7 @@ const invoiceRowSchema = z.object({
   invoice_ref: z.string().trim().min(1, "Required"),
   project_ref: z.string().trim().min(1, "Required"),
   invoice_number: z.string().trim().max(50).optional().or(z.literal("")),
-  // Both dates are optional at the row-parse stage — a real due_date is
+  // Both dates are optional at the row-parse stage; a real due_date is
   // required by the DB, but rather than reject the whole file over a blank
   // cell, buildImportPlan below fills it in: due_date from issue_date (or
   // today), issue_date from due_date (or today). Only genuinely-missing
@@ -139,7 +139,7 @@ export interface ImportBuildResult {
   warnings: ImportRowError[];
 }
 
-/** Today as YYYY-MM-DD, in the server's local date — used only as a last-
+/** Today as YYYY-MM-DD, in the server's local date, used only as a last-
  * resort fallback when a row gives us no date to work with at all. */
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -169,7 +169,7 @@ function validateRows<T extends z.ZodTypeAny>(
     out.push(parsed.data);
   });
   if (rows.length > MAX_ROWS_PER_FILE) {
-    errors.push({ file, row: MAX_ROWS_PER_FILE + 2, message: `Only the first ${MAX_ROWS_PER_FILE} rows were checked — split this file.` });
+    errors.push({ file, row: MAX_ROWS_PER_FILE + 2, message: `Only the first ${MAX_ROWS_PER_FILE} rows were checked. Split this file.` });
   }
   return out;
 }
@@ -244,7 +244,7 @@ export function buildImportPlan(input: {
     const existing = invoiceByRef.get(r.invoice_ref);
     if (existing) {
       // Repeat rows are usually extra line items on the same invoice, and
-      // often only carry the description/qty/price — a blank date/status on
+      // often only carry the description/qty/price; a blank date/status on
       // a repeat row is not a conflict, only a genuinely different non-blank
       // value is.
       if (
@@ -254,7 +254,7 @@ export function buildImportPlan(input: {
         errors.push({
           file: "invoices",
           row: i + 2,
-          message: `invoice_ref "${r.invoice_ref}" repeated with a different project_ref/due_date — line items on the same invoice must share those`,
+          message: `invoice_ref "${r.invoice_ref}" repeated with a different project_ref/due_date; line items on the same invoice must share those`,
         });
         return;
       }
@@ -269,7 +269,7 @@ export function buildImportPlan(input: {
     // Neither date is required on the sheet: due_date falls back to
     // issue_date (an invoice is at minimum "due when issued"), and if
     // NEITHER is given at all, both fall back to today rather than
-    // blocking the whole import over one missing cell — flagged as a
+    // blocking the whole import over one missing cell; flagged as a
     // warning so it's visible before committing, not silently invented.
     let dueDate = r.due_date;
     let issueDate = r.issue_date;
@@ -279,21 +279,21 @@ export function buildImportPlan(input: {
       warnings.push({
         file: "invoices",
         row: i + 2,
-        message: `invoice_ref "${r.invoice_ref}" had no issue_date or due_date — used today's date (${dueDate})`,
+        message: `invoice_ref "${r.invoice_ref}" had no issue_date or due_date; used today's date (${dueDate})`,
       });
     } else if (!dueDate) {
       dueDate = issueDate!;
       warnings.push({
         file: "invoices",
         row: i + 2,
-        message: `invoice_ref "${r.invoice_ref}" had no due_date — used its issue_date (${dueDate})`,
+        message: `invoice_ref "${r.invoice_ref}" had no due_date; used its issue_date (${dueDate})`,
       });
     } else if (!issueDate) {
       issueDate = dueDate;
       warnings.push({
         file: "invoices",
         row: i + 2,
-        message: `invoice_ref "${r.invoice_ref}" had no issue_date — used its due_date (${issueDate})`,
+        message: `invoice_ref "${r.invoice_ref}" had no issue_date; used its due_date (${issueDate})`,
       });
     }
 

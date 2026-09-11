@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * A button for a not-yet-built feature. Shows a small "coming soon" bubble
- * only when clicked — never on hover, never on load — and it dismisses
+ * only when clicked (never on hover, never on load) and it dismisses
  * itself (auto-timeout, outside click, or Escape).
  */
 export function ComingSoonButton({

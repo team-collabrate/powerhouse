@@ -54,7 +54,7 @@ export async function POST(request: Request) {
           createdBy: auth.userId,
           lineItems: {
             create: {
-              description: `${project.name} — services`,
+              description: `${project.name}: services`,
               quantity: 1,
               unitPrice: 0,
               position: 0,

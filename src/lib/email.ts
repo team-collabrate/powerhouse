@@ -99,7 +99,7 @@ export async function sendInviteEmail(p: {
   if (!resend) {
     return {
       delivered: false,
-      note: "Invite created. Copy the link below — or set RESEND_API_KEY to email it.",
+      note: "Invite created. Copy the link below, or set RESEND_API_KEY to email it.",
     };
   }
   const html = `

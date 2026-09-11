@@ -1,5 +1,5 @@
 /**
- * Pure analytics helpers — no Prisma, no cache. The period-scoped fetching
+ * Pure analytics helpers: no Prisma, no cache. The period-scoped fetching
  * lives in `src/lib/queries/report.ts` (`getReport`).
  */
 import { calculateProjectProfit } from "@/lib/profit";
@@ -107,7 +107,7 @@ export function serviceMixByContract(
   return ranked.map(([type, amount], i) => ({
     label: serviceLabel(services, type),
     // shaded by rank from the agency's own accent colour (dark→light), not
-    // each service's own tag colour — keeps the share-of-total chart to
+    // each service's own tag colour, keeps the share-of-total chart to
     // one hue instead of a mixed set
     color: shades[i],
     amount,

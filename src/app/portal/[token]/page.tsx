@@ -112,7 +112,7 @@ export default async function PortalPage({
                         {i.invoiceNumber}
                       </td>
                       <td className="tnum px-3 py-2.5 text-[12.5px] text-ink-3">
-                        {i.issueDate ? formatDate(i.issueDate) : "—"}
+                        {i.issueDate ? formatDate(i.issueDate) : "-"}
                       </td>
                       <td className="tnum px-3 py-2.5 text-[12.5px] text-ink-3">
                         {formatDate(i.dueDate)}
@@ -121,7 +121,7 @@ export default async function PortalPage({
                         {formatCurrency(i.amount)}
                       </td>
                       <td className="tnum px-3 py-2.5 text-[13px] text-ink">
-                        {i.balance === 0 ? "—" : formatCurrency(i.balance)}
+                        {i.balance === 0 ? "-" : formatCurrency(i.balance)}
                       </td>
                       <td className="px-3 py-2.5">
                         <StatusBadge status={i.status} />

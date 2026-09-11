@@ -1,6 +1,6 @@
 /**
  * Derive a usable accent palette from any colour an agency picks in the
- * brand-colour field (a plain `<input type="color">` — any hue). Pure,
+ * brand-colour field (a plain `<input type="color">`, any hue). Pure,
  * client-safe.
  */
 
@@ -118,16 +118,16 @@ const RAMP_MAX_L = 0.94;
 const RAMP_MIN_S = 0.1;
 
 /**
- * `count` shades of the agency's own accent colour, strong→light — for
+ * `count` shades of the agency's own accent colour, strong→light, for
  * "share of total" charts (service mix) that should read as one hue, not a
  * scatter of unrelated tag colours. Index 0 is the accent itself (same hex
  * `deriveAccentPalette` uses for buttons).
  *
- * Each stop is a **fixed step from the previous one, by rank** — not a
- * fraction of the total count — so slice #2 is always a clearly-tinted
+ * Each stop is a **fixed step from the previous one, by rank** (not a
+ * fraction of the total count), so slice #2 is always a clearly-tinted
  * secondary shade (never a washed-out near-white just because there are
  * only 2 services), and adding a 3rd/4th service only appends a new,
- * slightly lighter stop instead of recomputing — and shifting — every
+ * slightly lighter stop instead of recomputing (and shifting) every
  * existing service's colour.
  */
 export function accentShadeRamp(input: string, count: number): string[] {

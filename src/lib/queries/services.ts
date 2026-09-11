@@ -29,7 +29,7 @@ async function fetchServices(agencyId: string): Promise<ServiceRow[]> {
 
 export const getServices = cacheAgencyRead(fetchServices, ["services"], 120);
 
-/** Uncached — for scripts and inside other cached adapters. */
+/** Uncached: for scripts and inside other cached adapters. */
 export { fetchServices };
 
 type ServiceWriter = {

@@ -6,7 +6,7 @@ const PUBLIC_PATHS = [
   "/signup",
   "/forgot-password",
   "/reset-password",
-  // Sign-up runs before there's a session — the API route that provisions the
+  // Sign-up runs before there's a session; the API route that provisions the
   // agency/user must be reachable unauthenticated too.
   "/api/auth/",
 ];
@@ -14,7 +14,7 @@ const PUBLIC_PATHS = [
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  // Not configured yet (fresh clone, no .env.local) — let every request through
+  // Not configured yet (fresh clone, no .env.local): let every request through
   // so the app is browsable before a Supabase project is wired up.
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||

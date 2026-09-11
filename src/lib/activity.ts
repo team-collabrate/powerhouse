@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { bustAgencyData } from "@/lib/cache";
 
 /**
- * Append an audit-trail entry. Best-effort — never throw into the caller.
+ * Append an audit-trail entry. Best-effort: never throw into the caller.
  * Also drops the agency-scoped read cache: every mutation route calls this,
  * so cached dashboard/analytics views reflect the write immediately.
  */

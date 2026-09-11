@@ -18,7 +18,7 @@ const configured = () =>
 /**
  * Resolve the signed-in user's agency context. Returns null when Supabase /
  * the database is not configured, when nobody is signed in, or when the auth
- * user has no matching profile row yet — callers fall back to demo data.
+ * user has no matching profile row yet; callers fall back to demo data.
  */
 export const getSessionContext = cache(
   async (): Promise<SessionContext | null> => {

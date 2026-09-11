@@ -74,7 +74,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   });
   if (!existing) return fail("NOT_FOUND", "Client not found", 404);
 
-  // soft delete — projects and invoices keep referring to the client
+  // soft delete: projects and invoices keep referring to the client
   await prisma.client.update({ where: { id }, data: { isActive: false } });
 
   await logActivity({

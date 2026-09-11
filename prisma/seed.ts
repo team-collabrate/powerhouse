@@ -91,7 +91,7 @@ async function main() {
       name: "Nayan Studio",
       monthlyRevenueTarget: money(90_000),
       // Demo uses the `percent` rule (6% of contract value) so margins stay
-      // realistic — this seed lists Core payroll under company overhead, which
+      // realistic: this seed lists Core payroll under company overhead, which
       // the pool methods (even / contract_share) would over-allocate since
       // labour is already tracked per project as teamCost. Surya Labs App
       // Launch keeps a pinned per-project override below to show that path.
@@ -104,12 +104,12 @@ async function main() {
   await prisma.companyExpense.createMany({
     data: (
       [
-        ["rent", "Studio lease — Indiranagar", 6_500, true, "monthly"],
+        ["rent", "Studio lease, Indiranagar", 6_500, true, "monthly"],
         ["salary", "Core payroll", 62_000, true, "monthly"],
         ["software", "Design + dev tool stack", 1_400, true, "monthly"],
         ["insurance", "Professional indemnity", 2_100, true, "quarterly"],
         ["utilities", "Power + internet", 380, true, "monthly"],
-        ["other", "Team offsite — Coorg", 4_200, false, null],
+        ["other", "Team offsite, Coorg", 4_200, false, null],
       ] as const
     ).map(([category, description, amount, isRecurring, freq], i) => ({
       agencyId,
@@ -187,7 +187,7 @@ async function main() {
   // ---- projects: `teamCost` is the estimated internal labour cost, tuned so
   // each project lands on a sensible margin. Bhoomi Storefront is deliberately
   // under 15% so the "under margin" insight fires. `since` = project age in days.
-  // `overhead` is a per-project OVERRIDE — left at 0 so the agency rule
+  // `overhead` is a per-project OVERRIDE, left at 0 so the agency rule
   // (6% of contract value) applies; Surya Labs pins its own value. ----
   const P = [
     { name: "Kirana Fresh Rebrand", client: "Kirana Fresh", service: "design", status: "active", value: 84_000, overhead: 0, since: 74, teamCost: 30_000, progress: 62 },
@@ -232,7 +232,7 @@ async function main() {
         projectId: proj.id,
         category: cats[k],
         amount: money(320 + ((idx + k) % 4) * 260), // ~₹12.8k..44k
-        description: `${cats[k]} — ${proj.name}`,
+        description: `${cats[k]} for ${proj.name}`,
         dateIncurred: day(-back),
         createdBy: primaryUserId,
       });
@@ -242,7 +242,7 @@ async function main() {
         projectId: proj.id,
         category: "freelance",
         amount: money(spec.bigExpense),
-        description: `Contract build help — ${proj.name}`,
+        description: `Contract build help for ${proj.name}`,
         dateIncurred: day(-19),
         createdBy: primaryUserId,
       });
@@ -283,7 +283,7 @@ async function main() {
     });
   }
 
-  // Historical milestone payments — build lifetime revenue + the MoM baseline
+  // Historical milestone payments: build lifetime revenue + the MoM baseline
   // (two land in the first days of last month), none inside the 30-day chart.
   await paidInvoice(helio, 41_000, 62);
   await paidInvoice(projects.find((p) => p.name === "Arogya Brand System")!, 34_000, 50);
@@ -301,7 +301,7 @@ async function main() {
     await paidInvoice(i % 2 ? helio : northwind, amount, back);
   }
 
-  // Open receivables — created last so they're the "recent" rows in the table.
+  // Open receivables, created last so they're the "recent" rows in the table.
   const open: [string, number, number, number, string][] = [
     // project, amount, issuedBack, dueBack, status
     ["Sankalp Campaign", 18_000, 10, -18, "sent"],

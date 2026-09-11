@@ -20,7 +20,7 @@ import {
 } from "@/lib/reports/milestone-rollup";
 
 /* ------------------------------------------------------------------ *
- * Normalized inputs — the pure builder below works off these so it
+ * Normalized inputs: the pure builder below works off these so it
  * can be unit-tested without a database.
  * ------------------------------------------------------------------ */
 
@@ -57,7 +57,7 @@ export interface DashInputs {
   clients: { createdAt: Date }[]; // last 6 months
   milestones: MilestoneRollupInput[];
   services: ServiceLite[];
-  /** the agency's own accent colour — shades the service-mix donut */
+  /** the agency's own accent colour: shades the service-mix donut */
   brandColor: string;
   monthlyRevenueTarget: number;
   overheadMethod: string;
@@ -139,7 +139,7 @@ export function buildDashboardView(input: DashInputs): DashboardView {
           )
         : 0;
 
-  // ---- KPIs (all-time / year-to-date — this is a low-volume, project-based
+  // ---- KPIs (all-time / year-to-date: this is a low-volume, project-based
   // business, so a monthly view reads as mostly zeros) ----
   const revenueAllTime = payments.reduce((s, p) => s + p.amount, 0);
   const revenueThisYear = payments
@@ -259,7 +259,7 @@ export function buildDashboardView(input: DashInputs): DashboardView {
       mStart,
       mEnd,
     );
-    // don't recognise cost past today — the current month is still partial
+    // don't recognise cost past today; the current month is still partial
     const mCap = mEnd > now ? now : mEnd;
     const amortised = costSpans.reduce(
       (s, c) => s + c.dailyCost * overlapDays(c.from, c.to, mStart, mCap),
@@ -300,8 +300,8 @@ export function buildDashboardView(input: DashInputs): DashboardView {
           label: serviceLabel(input.services, type),
           value: Math.round((agg.contract / serviceTotal) * 100),
           margin: agg.contract > 0 ? Math.round((agg.profit / agg.contract) * 100) : 0,
-          // shaded by rank from the agency's own accent colour (dark→light)
-          // — one hue for the donut, not each service's own tag colour
+          // shaded by rank from the agency's own accent colour (dark→light):
+          // one hue for the donut, not each service's own tag colour
           // (that stays on project rows/tags)
           color: shades[i],
         }))

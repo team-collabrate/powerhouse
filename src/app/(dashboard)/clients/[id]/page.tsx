@@ -179,7 +179,7 @@ export default async function ClientDetailPage({
                         {formatCurrency(i.amount)}
                       </td>
                       <td className="tnum px-3 py-2 text-[12.5px] text-ink-2">
-                        {i.balance === 0 ? "—" : formatCurrency(i.balance)}
+                        {i.balance === 0 ? "-" : formatCurrency(i.balance)}
                       </td>
                     </tr>
                   ))}

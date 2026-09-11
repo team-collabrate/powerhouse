@@ -4,7 +4,7 @@ export interface PeriodSummary {
   revenue: Metric;
   cost: Metric;
   net: Metric;
-  /** net margin % this period and last — a point difference, not a ratio */
+  /** net margin % this period and last: a point difference, not a ratio */
   marginPct: number;
   prevMarginPct: number;
   marginDeltaPts: number | null;

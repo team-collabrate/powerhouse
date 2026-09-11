@@ -26,7 +26,7 @@ export interface InvoiceDocProps {
 }
 
 /**
- * The printable invoice — shared by /print/invoice/[id] and the live preview
+ * The printable invoice, shared by /print/invoice/[id] and the live preview
  * in the editor. Pure presentational; safe in both server and client trees.
  */
 export function InvoiceDocument(p: InvoiceDocProps) {
@@ -123,7 +123,7 @@ export function InvoiceDocument(p: InvoiceDocProps) {
           ) : (
             p.lineItems.map((li, i) => (
               <tr key={i} className="border-b border-neutral-100">
-                <td className="py-3 pr-4">{li.description || "—"}</td>
+                <td className="py-3 pr-4">{li.description || "-"}</td>
                 <td className="py-3 text-right tabular-nums">
                   {li.quantity % 1 === 0 ? li.quantity : li.quantity.toFixed(2)}
                 </td>

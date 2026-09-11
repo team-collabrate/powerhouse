@@ -1,6 +1,6 @@
 /**
  * Shared helpers for the pure report builders in this directory.
- * No Prisma, no Next — every builder is unit-tested from literal inputs.
+ * No Prisma, no Next: every builder is unit-tested from literal inputs.
  */
 
 export interface Totals {
@@ -11,7 +11,7 @@ export interface Totals {
 export interface Metric {
   value: number;
   prev: number;
-  /** relative % change vs `prev`; null when `prev` is 0 (render as "—") */
+  /** relative % change vs `prev`; null when `prev` is 0 (rendered as "-" in the UI) */
   deltaPct: number | null;
   direction: "up" | "down" | "flat";
 }

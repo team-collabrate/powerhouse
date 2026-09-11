@@ -11,7 +11,7 @@ export interface DsoInvoice {
 export interface DsoResult {
   avgDays: number;
   medianDays: number;
-  /** amount-weighted average — big invoices count more */
+  /** amount-weighted average: big invoices count more */
   weightedAvgDays: number;
   paidCount: number;
   slowest: { invoiceNumber: string; days: number; amount: number }[];

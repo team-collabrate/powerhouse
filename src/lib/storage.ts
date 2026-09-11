@@ -58,7 +58,7 @@ export async function uploadAgencyLogo(
   return { url: `${data.publicUrl}?v=${Date.now()}` };
 }
 
-/** Best-effort — clears the record even if the storage delete fails. */
+/** Best-effort: clears the record even if the storage delete fails. */
 export async function deleteAgencyLogo(agencyId: string): Promise<void> {
   const admin = createAdminClient();
   if (!admin) return;

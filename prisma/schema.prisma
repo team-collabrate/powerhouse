@@ -1,6 +1,6 @@
 // Agency Revenue & Project Control Dashboard
 // Schema derived from docs/database/DATA_MODEL.md (Prisma section).
-// Profit / cost / lifetime-value figures are NOT stored columns — Postgres
+// Profit / cost / lifetime-value figures are NOT stored columns: Postgres
 // generated columns cannot run cross-table subqueries. They are computed in
 // the API layer (see src/lib/profit.ts) or via SQL views.
 

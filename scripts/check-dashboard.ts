@@ -121,8 +121,8 @@ const input: DashInputs = {
   ],
   payments: [
     { amount: 25_000, date: d(-4) }, // this month, Sep 11 (MTD through Sep 15)
-    { amount: 10_000, date: new Date(2026, 7, 10) }, // Aug 10 — inside the Aug 1–15 comparison window
-    { amount: 99_000, date: new Date(2026, 7, 28) }, // Aug 28 — outside the comparison window, must be ignored
+    { amount: 10_000, date: new Date(2026, 7, 10) }, // Aug 10, inside the Aug 1–15 comparison window
+    { amount: 99_000, date: new Date(2026, 7, 28) }, // Aug 28, outside the comparison window, must be ignored
   ],
   clients: [
     { createdAt: monthsBack(4) },
@@ -174,7 +174,7 @@ function check(label: string, cond: boolean, detail?: unknown) {
     console.log(`  ok   ${label}`);
   } else {
     failures++;
-    console.log(`  FAIL ${label}${detail !== undefined ? ` — ${JSON.stringify(detail)}` : ""}`);
+    console.log(`  FAIL ${label}${detail !== undefined ? `: ${JSON.stringify(detail)}` : ""}`);
   }
 }
 
@@ -267,7 +267,7 @@ check(
 );
 
 /* ------------------------------------------------------------------ *
- * buildDashboardView — yearly / all-time framing.
+ * buildDashboardView: yearly / all-time framing.
  * Small, focused fixtures (the shared `input` above is a broad case).
  * ------------------------------------------------------------------ */
 console.log("\ndashboard (yearly framing):");
@@ -308,7 +308,7 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
   ...o,
 });
 
-// Slice 1 — Revenue KPI value is all-time; the hint counts only this year.
+// Slice 1: Revenue KPI value is all-time; the hint counts only this year.
 {
   const r = buildDashboardView(
     mkInputs({
@@ -335,7 +335,7 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
   );
 }
 
-// Slice 2 — Profit Margin is portfolio-weighted and skips closed projects.
+// Slice 2: Profit Margin is portfolio-weighted and skips closed projects.
 {
   const r = buildDashboardView(
     mkInputs({
@@ -353,7 +353,7 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
   );
 }
 
-// Slice 3 — Projects KPI hint reflects whether anything is still in progress.
+// Slice 3: Projects KPI hint reflects whether anything is still in progress.
 {
   const done = buildDashboardView(
     mkInputs({
@@ -385,7 +385,7 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
   );
 }
 
-// Slice 4 — with a target, the hint shows % of the annualised (×12) target.
+// Slice 4: with a target, the hint shows % of the annualised (×12) target.
 {
   const r = buildDashboardView(
     mkInputs({
@@ -405,7 +405,7 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
   );
 }
 
-// Slice 5 — profit chart = 12 monthly buckets; project cost is amortised over
+// Slice 5: profit chart = 12 monthly buckets; project cost is amortised over
 // its span, and the current (partial) month is capped at today.
 {
   const r = buildDashboardView(
@@ -442,7 +442,7 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
   );
 }
 
-// Slice 6 — service-mix margin: a loss-making service line shows negative,
+// Slice 6: service-mix margin: a loss-making service line shows negative,
 // alongside a profitable one, without disturbing each other.
 {
   const r = buildDashboardView(
@@ -466,7 +466,7 @@ const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
 }
 
 /* ------------------------------------------------------------------ *
- * period.ts — reporting windows (Indian FY, Apr–Mar)
+ * period.ts: reporting windows (Indian FY, Apr–Mar)
  * ------------------------------------------------------------------ */
 console.log("\nperiod:");
 
@@ -600,7 +600,7 @@ check(
 }
 
 /* ------------------------------------------------------------------ *
- * src/lib/reports/* — pure report builders
+ * src/lib/reports/*: pure report builders
  * ------------------------------------------------------------------ */
 console.log("\nreports:");
 
@@ -935,7 +935,7 @@ console.log("\nmilestones + notifications:");
 }
 
 /* ------------------------------------------------------------------ *
- * src/lib/color.ts — per-agency accent derivation
+ * src/lib/color.ts: per-agency accent derivation
  * ------------------------------------------------------------------ */
 console.log("\ncolor:");
 
@@ -999,7 +999,7 @@ check("normalizeHex rejects garbage", normalizeHex("not-a-color") === null);
   );
   check(
     // once saturation bottoms out near-white, a 1-unit rounding wobble
-    // between two indistinguishable near-white stops is fine — what matters
+    // between two indistinguishable near-white stops is fine; what matters
     // is it never gets *darker* going down the ramp, and it clearly lightens
     // overall
     "ramp: lightens stop-to-stop (dark → light, one hue), never reverses",
@@ -1019,7 +1019,7 @@ check("normalizeHex rejects garbage", normalizeHex("not-a-color") === null);
     accentShadeRamp("#9933ff", 2),
   );
   check(
-    "ramp: rank is stable — adding services doesn't reshuffle earlier colours",
+    "ramp: rank is stable, adding services doesn't reshuffle earlier colours",
     accentShadeRamp("#9933ff", 3).every(
       (c, i) => c === accentShadeRamp("#9933ff", 5)[i],
     ),

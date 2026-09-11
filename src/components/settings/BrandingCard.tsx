@@ -173,7 +173,7 @@ export function BrandingCard({
             <p className="mt-1.5 text-[12px] text-profit">Saved</p>
           )}
           <p className="mt-1.5 text-[12px] text-ink-3">
-            Drag the slider in the swatch, or paste any hex — buttons and
+            Drag the slider in the swatch, or paste any hex; buttons and
             highlights across the whole app pick it up.
           </p>
         </div>

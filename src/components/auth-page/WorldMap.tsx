@@ -10,7 +10,7 @@ interface Dot {
 }
 
 const map = new DottedMap({ height: 100, grid: "diagonal" });
-// Static (light-mode only, per the app's design tokens) — computed once at
+// Static (light-mode only, per the app's design tokens); computed once at
 // module scope so it isn't rebuilt on every render/re-mount.
 const SVG_MAP = map.getSVG({
   radius: 0.22,
@@ -30,7 +30,7 @@ function curvedPath(start: { x: number; y: number }, end: { x: number; y: number
   return `M ${start.x} ${start.y} Q ${midX} ${midY} ${end.x} ${end.y}`;
 }
 
-/** Decorative world map with animated flight paths — the auth hero's
+/** Decorative world map with animated flight paths, the auth hero's
  * background. `dots` are drawn once, in order, with a staggered delay. */
 export function WorldMap({ dots, lineColor = "#9933ff" }: { dots: Dot[]; lineColor?: string }) {
   const svgRef = useRef<SVGSVGElement>(null);

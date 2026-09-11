@@ -7,7 +7,7 @@ export interface BarItem {
   sub?: string;
 }
 
-/** A labelled horizontal bar list — the shared idiom for the mix/breakdown cards. */
+/** A labelled horizontal bar list, the shared idiom for the mix/breakdown cards. */
 export function BarList({ items, empty }: { items: BarItem[]; empty?: string }) {
   if (items.length === 0) {
     return (

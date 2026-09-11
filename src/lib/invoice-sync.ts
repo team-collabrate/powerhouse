@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * Keep the invoice's stored `status`/`paidDate` in step with its payments.
- * Only moves between "sent" and "paid" — never touches draft/cancelled.
+ * Only moves between "sent" and "paid"; never touches draft/cancelled.
  * Returns the resulting stored status.
  */
 export async function syncInvoicePaidState(invoiceId: string): Promise<string> {

@@ -11,7 +11,7 @@ export type {
 
 /**
  * Cross-project milestone rollup (upcoming / overdue / completion).
- * Not cached itself — callers (`getReport`) sit behind `cacheAgencyRead`.
+ * Not cached itself; callers (`getReport`) sit behind `cacheAgencyRead`.
  */
 export async function getMilestoneRollup(
   agencyId: string,

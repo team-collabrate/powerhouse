@@ -134,7 +134,7 @@ export async function commitImportPlan(
     { timeout: 30_000 },
   );
 
-  // outside the transaction — syncInvoicePaidState reads via the global
+  // outside the transaction: syncInvoicePaidState reads via the global
   // prisma client and only needs to see already-committed rows.
   const invoiceIdsWithPayments = new Set(
     plan.payments.map((p) => invoiceIdByRef.get(p.invoiceRef)).filter((id): id is string => !!id),

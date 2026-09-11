@@ -1,4 +1,4 @@
-/* Pure invoice arithmetic — subtotal → tax → total. Unit-tested. */
+/* Pure invoice arithmetic: subtotal → tax → total. Unit-tested. */
 
 export interface LineItemLike {
   quantity: number;

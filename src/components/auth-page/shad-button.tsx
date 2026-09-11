@@ -5,11 +5,11 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * A CVA-based button scoped to `auth-page/` only — the shared, app-wide
+ * A CVA-based button scoped to `auth-page/` only: the shared, app-wide
  * `src/components/ui/Button.tsx` has a different API (`variant` values,
  * no `size`/`asChild`) and is used across the whole app, so this is kept
  * separate rather than replacing it. Colours map to our own CSS tokens
- * (globals.css), not shadcn's default `bg-primary`/`border-input` theme —
+ * (globals.css), not shadcn's default `bg-primary`/`border-input` theme;
  * those custom properties don't exist here.
  */
 const buttonVariants = cva(

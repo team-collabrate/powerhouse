@@ -3,7 +3,7 @@ import { inRange, round0, sum } from "./shared";
 
 export interface GstInvoice {
   issueDate: Date | null;
-  /** the invoice total — tax-INCLUSIVE (`invoices.amount`) */
+  /** the invoice total, tax-INCLUSIVE (`invoices.amount`) */
   amount: number;
   taxRatePct: number;
   status: string;
