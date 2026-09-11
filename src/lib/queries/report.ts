@@ -121,6 +121,7 @@ export async function fetchReport(
     clients,
     milestones,
     services,
+    agency,
     overhead,
   ] = await Promise.all([
       prisma.invoice.findMany({
@@ -175,6 +176,10 @@ export async function fetchReport(
       }),
       getMilestoneRollup(agencyId, { from, to }),
       fetchServices(agencyId),
+      prisma.agency.findUnique({
+        where: { id: agencyId },
+        select: { brandColor: true },
+      }),
       resolveAgencyOverhead(agencyId),
     ]);
 
@@ -247,7 +252,11 @@ export async function fetchReport(
     (id) => overhead.overheadFor(id),
     services,
   );
-  const serviceMix = serviceMixByContract(profitability, services);
+  const serviceMix = serviceMixByContract(
+    profitability,
+    services,
+    agency?.brandColor,
+  );
 
   // ---- invoice-derived reports ----
   const invForReports = invoices.map((i) => {

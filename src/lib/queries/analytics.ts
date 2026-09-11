@@ -4,11 +4,8 @@
  */
 import { calculateProjectProfit } from "@/lib/profit";
 import type { ProjectStatus } from "@/lib/queries/projects";
-import {
-  serviceLabel,
-  serviceColor,
-  type ServiceLite,
-} from "@/lib/services";
+import { serviceLabel, serviceColor, type ServiceLite } from "@/lib/services";
+import { accentShadeRamp } from "@/lib/color";
 
 export interface MonthlyPoint {
   label: string;
@@ -94,6 +91,7 @@ export interface ServiceMixSlice {
 export function serviceMixByContract(
   rows: { serviceType: string; contractValue: number }[],
   services: ServiceLite[] = [],
+  brandColor = "#9933ff",
 ): ServiceMixSlice[] {
   const byService = new Map<string, number>();
   for (const r of rows) {
@@ -104,14 +102,17 @@ export function serviceMixByContract(
   }
   const total = [...byService.values()].reduce((s, v) => s + v, 0);
   if (total <= 0) return [];
-  return [...byService.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([type, amount]) => ({
-      label: serviceLabel(services, type),
-      color: serviceColor(services, type),
-      amount,
-      value: Math.round((amount / total) * 100),
-    }));
+  const ranked = [...byService.entries()].sort((a, b) => b[1] - a[1]);
+  const shades = accentShadeRamp(brandColor, ranked.length);
+  return ranked.map(([type, amount], i) => ({
+    label: serviceLabel(services, type),
+    // shaded by rank from the agency's own accent colour (dark→light), not
+    // each service's own tag colour — keeps the share-of-total chart to
+    // one hue instead of a mixed set
+    color: shades[i],
+    amount,
+    value: Math.round((amount / total) * 100),
+  }));
 }
 
 export function profitabilityCsv(rows: ProfitabilityRow[]): string {

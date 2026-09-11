@@ -35,7 +35,12 @@ import {
   buildCompanyExpenseTrend,
 } from "@/lib/reports/expense-categories";
 import { buildClientRanking } from "@/lib/reports/client-ranking";
-import { normalizeHex, deriveAccentPalette, DEFAULT_ACCENT } from "@/lib/color";
+import {
+  normalizeHex,
+  deriveAccentPalette,
+  accentShadeRamp,
+  DEFAULT_ACCENT,
+} from "@/lib/color";
 import { buildMilestoneRollup } from "@/lib/reports/milestone-rollup";
 import {
   classifyInvoice,
@@ -56,6 +61,7 @@ const monthsBack = (m: number) => new Date(2026, 8 - m, 10);
 const input: DashInputs = {
   greetingName: "Bella",
   now,
+  brandColor: "#9933ff",
   monthlyRevenueTarget: 50_000,
   overheadMethod: "manual",
   overheadRate: 0,
@@ -272,6 +278,7 @@ const mkProject = (o: Partial<DashProjectInput> = {}): DashProjectInput => ({
 const mkInputs = (o: Partial<DashInputs> = {}): DashInputs => ({
   greetingName: "Test",
   now: dNow,
+  brandColor: "#9933ff",
   monthlyRevenueTarget: 0,
   overheadMethod: "manual",
   overheadRate: 0,
@@ -939,6 +946,38 @@ check("normalizeHex rejects garbage", normalizeHex("not-a-color") === null);
     "invalid input falls back to the default Powerhouse accent",
     deriveAccentPalette("nonsense").accent === deriveAccentPalette(DEFAULT_ACCENT).accent,
   );
+}
+
+// --- accentShadeRamp: single-hue "share of total" chart shading ---
+{
+  const purple = accentShadeRamp("#9933ff", 5);
+  check(
+    "ramp: 5 stops, all valid hex, first stop = the accent itself",
+    purple.length === 5 &&
+      purple.every((c) => HEX_RE.test(c)) &&
+      purple[0] === deriveAccentPalette("#9933ff").accent,
+    purple,
+  );
+  check(
+    "ramp: strictly lightens stop-to-stop (dark → light, one hue)",
+    purple.every((c, i) => i === 0 || rgbSum(c) > rgbSum(purple[i - 1])),
+    purple,
+  );
+  check(
+    "ramp: last stop is near-white",
+    rgbSum(purple[purple.length - 1]) > 700, // out of a possible 765
+    purple,
+  );
+
+  const green = accentShadeRamp("#16a34a", 3);
+  check(
+    "ramp follows whatever hue the agency picked, not hard-coded purple",
+    green[0] === deriveAccentPalette("#16a34a").accent && green[0] !== purple[0],
+    { green: green[0], purple: purple[0] },
+  );
+
+  check("ramp of 1 → just the accent", accentShadeRamp("#3366cc", 1).length === 1);
+  check("ramp of 0 → empty", accentShadeRamp("#3366cc", 0).length === 0);
 }
 
 console.log("\npermissions:");

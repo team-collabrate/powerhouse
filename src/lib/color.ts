@@ -111,3 +111,25 @@ export function deriveAccentPalette(input: string): AccentPalette {
     accentSoft: rgbToHex(...hslToRgb(softHsl)),
   };
 }
+
+/**
+ * `count` shades of the agency's own accent colour, strong→near-white — for
+ * "share of total" charts (service mix) that should read as one hue, not a
+ * scatter of unrelated tag colours. Index 0 is the accent itself (same hex
+ * `deriveAccentPalette` uses for buttons); later stops lighten and
+ * desaturate toward the background.
+ */
+export function accentShadeRamp(input: string, count: number): string[] {
+  if (count <= 0) return [];
+  const { accent } = deriveAccentPalette(input);
+  if (count === 1) return [accent];
+
+  const [r, g, b] = hexToRgb(accent);
+  const { h, s, l } = rgbToHsl(r, g, b);
+  return Array.from({ length: count }, (_, i) => {
+    const t = i / (count - 1);
+    const lightness = l + (0.95 - l) * t;
+    const saturation = s * (1 - t) + 0.05 * t;
+    return rgbToHex(...hslToRgb({ h, s: saturation, l: lightness }));
+  });
+}

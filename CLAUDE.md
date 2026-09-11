@@ -327,6 +327,14 @@ them. **Cached adapters take `PeriodInput` (strings), never a `Date`** — the
   `{agencyId}/logo.<ext>` path with a cache-busting `?v=` query string on the
   saved URL; PNG/JPG/WEBP/SVG, 2MB cap. `brandColor` still saves through the
   existing `PATCH /api/settings`.
+  The dashboard "Revenue by Service" donut and the analytics "Contract value
+  by service" section are **single-hue**, not each service's own tag colour
+  — `accentShadeRamp(brandColor, n)` (`src/lib/color.ts`) shades the
+  agency's own accent from strong (biggest slice) down to near-white, so the
+  chart reads as one brand-aligned ramp regardless of how many services
+  exist or what colours they're tagged. Per-service tag colours are still
+  used for identification everywhere else (project rows, the profitability
+  table, Settings → Services).
 - Company overhead CRUD (`company_expenses` table): `GET/POST
   /api/company-expenses`, `PATCH/DELETE /api/company-expenses/[id]`.
   Shows normalised $/mo recurring + last-month total.

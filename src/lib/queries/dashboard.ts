@@ -12,11 +12,8 @@ import {
   type InvoiceRowView,
   type ProfitPoint,
 } from "@/lib/dashboard-types";
-import {
-  serviceLabel,
-  serviceColor,
-  type ServiceLite,
-} from "@/lib/services";
+import { serviceLabel, type ServiceLite } from "@/lib/services";
+import { accentShadeRamp, DEFAULT_ACCENT } from "@/lib/color";
 import {
   buildMilestoneRollup,
   type MilestoneRollupInput,
@@ -60,6 +57,8 @@ export interface DashInputs {
   clients: { createdAt: Date }[]; // last 6 months
   milestones: MilestoneRollupInput[];
   services: ServiceLite[];
+  /** the agency's own accent colour — shades the service-mix donut */
+  brandColor: string;
   monthlyRevenueTarget: number;
   overheadMethod: string;
   overheadRate: number; // fraction 0..1
@@ -288,16 +287,20 @@ export function buildDashboardView(input: DashInputs): DashboardView {
     byService.set(p.serviceType, (byService.get(p.serviceType) ?? 0) + p.contractValue);
   }
   const serviceTotal = [...byService.values()].reduce((s, v) => s + v, 0);
+  const rankedServices = [...byService.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+  const shades = accentShadeRamp(input.brandColor, rankedServices.length);
   const services =
     serviceTotal > 0
-      ? [...byService.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 6)
-          .map(([type, value]) => ({
-            label: serviceLabel(input.services, type),
-            value: Math.round((value / serviceTotal) * 100),
-            color: serviceColor(input.services, type),
-          }))
+      ? rankedServices.map(([type, value], i) => ({
+          label: serviceLabel(input.services, type),
+          value: Math.round((value / serviceTotal) * 100),
+          // shaded by rank from the agency's own accent colour (dark→light)
+          // — one hue for the donut, not each service's own tag colour
+          // (that stays on project rows/tags)
+          color: shades[i],
+        }))
       : [];
 
   // ---- top projects by margin ----
@@ -509,7 +512,7 @@ export async function fetchDashboardData(
     }),
     prisma.agency.findUnique({
       where: { id: agencyId },
-      select: { monthlyRevenueTarget: true },
+      select: { monthlyRevenueTarget: true, brandColor: true },
     }),
     fetchServices(agencyId),
     resolveAgencyOverhead(agencyId),
@@ -560,6 +563,7 @@ export async function fetchDashboardData(
       dueDate: m.dueDate,
       completedDate: m.completedDate,
     })),
+    brandColor: agency?.brandColor ?? DEFAULT_ACCENT,
     monthlyRevenueTarget: num(agency?.monthlyRevenueTarget),
     overheadMethod: overhead.method,
     overheadRate: overhead.percentRate,
