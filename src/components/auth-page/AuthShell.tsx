@@ -1,6 +1,15 @@
 import Link from "next/link";
 import { Globe2Icon, Grid2x2PlusIcon, MailIcon } from "lucide-react";
-import { FloatingPaths } from "./FloatingPaths";
+import { WorldMap } from "./WorldMap";
+
+// Mumbai/Bangalore out to the hubs agencies here actually work with —
+// decorative, not literal client locations.
+const AUTH_MAP_DOTS = [
+  { start: { lat: 19.076, lng: 72.8777 }, end: { lat: 51.5074, lng: -0.1278 } }, // Mumbai -> London
+  { start: { lat: 12.9716, lng: 77.5946 }, end: { lat: 37.7749, lng: -122.4194 } }, // Bangalore -> San Francisco
+  { start: { lat: 19.076, lng: 72.8777 }, end: { lat: 25.2048, lng: 55.2708 } }, // Mumbai -> Dubai
+  { start: { lat: 12.9716, lng: 77.5946 }, end: { lat: 1.3521, lng: 103.8198 } }, // Bangalore -> Singapore
+];
 
 export function AuthShell({
   title,
@@ -32,9 +41,8 @@ export function AuthShell({
           </p>
         </div>
 
-        <div className="absolute inset-0">
-          <FloatingPaths position={1} />
-          <FloatingPaths position={-1} />
+        <div className="absolute inset-0 flex items-center opacity-90">
+          <WorldMap dots={AUTH_MAP_DOTS} />
         </div>
       </div>
 
