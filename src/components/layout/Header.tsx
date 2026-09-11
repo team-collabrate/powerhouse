@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { LogOut } from "react-feather";
 import { createClient } from "@/lib/supabase/client";
+import { ComingSoonButton } from "@/components/ui/ComingSoonButton";
 import { MobileNav } from "./MobileNav";
 import { HeaderSearch } from "./HeaderSearch";
 import { NotificationsBell } from "./NotificationsBell";
@@ -46,10 +47,10 @@ export function Header({
           <LogOut size={16} />
         </button>
 
-        <button className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] px-2.5 text-[13px] font-medium text-white shadow-[var(--shadow-card)] transition-[filter] hover:brightness-[1.04] sm:px-3.5">
+        <ComingSoonButton className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] px-2.5 text-[13px] font-medium text-white shadow-[var(--shadow-card)] transition-[filter] hover:brightness-[1.04] sm:px-3.5">
           <Sparkle />
           <span className="hidden sm:inline">Get AI Insight</span>
-        </button>
+        </ComingSoonButton>
       </div>
     </header>
   );

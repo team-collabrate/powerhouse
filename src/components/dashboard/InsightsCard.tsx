@@ -1,4 +1,7 @@
+"use client";
+
 import { AlertTriangle, ArrowRight, FileText } from "react-feather";
+import { ComingSoonButton } from "@/components/ui/ComingSoonButton";
 import type { InsightView } from "@/lib/dashboard-types";
 
 const ICONS = { "alert-triangle": AlertTriangle, "file-text": FileText } as const;
@@ -27,10 +30,13 @@ export function InsightsCard({ items }: { items: InsightView[] }) {
         })}
       </ul>
 
-      <button className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-hairline-strong bg-surface px-3 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-surface-sunken">
+      <ComingSoonButton
+        className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-hairline-strong bg-surface px-3 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-surface-sunken"
+        bubbleClassName="left-1/2 right-auto -translate-x-1/2"
+      >
         Open assistant
         <ArrowRight size={14} />
-      </button>
+      </ComingSoonButton>
     </div>
   );
 }
