@@ -210,12 +210,23 @@ are wrapped in React `cache()` for per-request dedup.
 
 ## Auth pages
 
-`(auth)` route group: `/login`, `/signup`, `/forgot-password`,
-`/reset-password`. Reset flow: `resetPasswordForEmail` → link back to
-`/reset-password` → `updateUser({ password })`. `proxy.ts` PUBLIC_PATHS
-lets those through and does **not** bounce a recovery-session user off
-`/reset-password`. Sidebar shows the real session user (name + role);
-demo mode (no Supabase env) = "Demo User" / admin.
+`/login` and `/signup` (`src/app/login/`, `src/app/signup/` — plain routes,
+not the `(auth)` group) share a split-screen shell, `AuthShell`
+(`src/components/auth-page/`): branded hero panel with an animated SVG
+background (`FloatingPaths`) on the left, the form on the right, a
+"Powered by collabrate.digital" + `hello@collabrate.digital` footer row.
+OAuth buttons (Google/Apple/GitHub, `OAuthRow`) aren't wired to Supabase yet
+— they show the shared `ComingSoonButton` bubble instead of a dead action.
+The shadcn-style primitives under `src/components/auth-page/` (`shad-button`,
+`shad-input`) are scoped to this folder only and remap every colour class to
+this app's own CSS tokens — they don't replace the app's hand-rolled
+`Button`/`Field` used everywhere else. `/forgot-password` and
+`/reset-password` stay in the `(auth)` route group, unchanged. Reset flow:
+`resetPasswordForEmail` → link back to `/reset-password` →
+`updateUser({ password })`. `proxy.ts` PUBLIC_PATHS lets all four pages
+through and does **not** bounce a recovery-session user off
+`/reset-password`. Sidebar shows the real session user (name + role); demo
+mode (no Supabase env) = "Demo User" / admin.
 
 ## Going live with real data
 
